@@ -59,4 +59,16 @@ html[data-theme="dark"] .hd-primary,.dark .hd-primary{background:#eee!important;
  #dashboard-calendar .hd-calendar-grid{width:100%;min-width:0}
  #dashboard-calendar .hd-calendar-grid>*{min-width:0}
  #sidebar{top:calc(76px + env(safe-area-inset-top))!important;bottom:env(safe-area-inset-bottom)!important;max-height:calc(100dvh - 76px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+ /* Keep the final controls above Safari's bottom toolbar and rubber-band edge. */
+ #scroll-container{padding-bottom:calc(128px + env(safe-area-inset-bottom))!important;overscroll-behavior-y:none}
+ /* The connection badge and setup note take over the small-screen heading. */
+ :is(#view-order,#view-newprod,#view-recipe,#view-origin)>.u-heading .u-status,
+ :is(#view-order,#view-newprod,#view-recipe,#view-origin)>.u-heading+.u-notice:not([role="alert"]){display:none!important}
+ #view-order .u-order-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:stretch}
+ #view-order .u-order-controls>.u-field{width:100%;min-width:0;max-width:none;flex:none}
+ #view-order .u-order-controls input[type="date"]{width:100%;max-width:100%;min-width:0}
+ #view-order .u-store-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;min-width:0}
+ #view-order .u-store-tabs .u-btn{width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center}
+ #view-newprod .u-new-product-summary .u-new-product-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.35}
+ #view-newprod .u-new-product-summary .u-new-product-price{white-space:nowrap}
 }
