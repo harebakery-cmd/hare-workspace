@@ -12,6 +12,77 @@
  ];
  const builtinIds = new Set(builtins.map(row => row[0]));
  const boardDefaults = () => builtins.map(([id,label,group]) => ({id,label,group,visible:true,home:['view-order','view-newprod','view-recipe','view-production','view-origin'].includes(id)}));
+ const sectionMap = {
+  'view-calendar': [['calendar','달력'],['agenda','선택 날짜 일정']],
+  'view-bulletin': [['list','공지 목록'],['compose','공지 작성']],
+  'view-newprod': [['register','신제품 등록'],['list','등록된 신제품']],
+  'view-recipe': [['list','배합표 게시판'],['register','배합표 등록']],
+  'view-origin': [['products','제품 선택'],['edit','원산지 정보'],['queue','원라벨 목록']]
+ };
+ const orderStores = (() => {try{return JSON.parse($('unified-catalog')?.textContent||'{}').stores||[];}catch{return [];}})();
+ sectionMap['view-order'] = [['all','전체 발주'],...orderStores.map(x=>['store:'+x.id,x.name])];
+ const roleRank = {guest:0,staff:1,manager:2,admin:3,super:4};
+ const accountRole = () => window.HareAdmin?.currentAccount?.()?.role || 'guest';
+ function sections(boardId){
+  const defaults=sectionMap[boardId]||[];
+  const saved=boards().find(row=>row.id===boardId)?.sections||[];
+  const byId=new Map((Array.isArray(saved)?saved:[]).filter(x=>x&&typeof x.id==='string').map(x=>[x.id,x]));
+  const order=new Map((Array.isArray(saved)?saved:[]).map((x,i)=>[x?.id,i]));
+  return defaults.map(([id,label],i)=>({id,label,visible:true,access:boardId==='view-bulletin'&&id==='compose'?'staff':'all',default:i===0,...byId.get(id)}))
+   .sort((a,b)=>(order.get(a.id)??(defaults.length+defaults.findIndex(x=>x[0]===a.id)))-(order.get(b.id)??(defaults.length+defaults.findIndex(x=>x[0]===b.id))));
+ }
+ function canShowSection(row){
+  const required=row.access==='all'?0:(roleRank[row.access]??0);
+  return row.visible!==false && (roleRank[accountRole()]??0)>=required;
+ }
+ const sectionSelector = {
+  'view-calendar': {calendar:'#hd-full-calendar',agenda:'#hd-agenda'},
+  'view-bulletin': {list:'#dashboard-announcement-board',compose:'#dashboard-bulletin-form'},
+  'view-newprod': {register:'#u-product',list:'.u-board-panel'},
+  'view-recipe': {list:'.u-recipe-board',register:'.u-recipe-editor'},
+  'view-origin': {products:'.origin-search-label',edit:'.origin-editor-panel form',queue:'.origin-queue-panel'}
+ };
+ const selectedSection={};
+ function innerMenu(boardId){
+  const host=$(boardId),items=sections(boardId).filter(canShowSection);
+  if(!host||!host.classList.contains('active')||items.length<2){host?.querySelector('.hd-inner-nav')?.remove();return;}
+  const pressed=boardId==='view-order'?host.querySelector('.u-store-tabs [aria-pressed="true"]')?.dataset.storeId:null;
+  const current=pressed!==null&&pressed!==undefined?(pressed?'store:'+pressed:'all'):selectedSection[boardId];
+  const selected=items.some(x=>x.id===current)?current:(items.find(x=>x.default)?.id||items[0].id);
+  selectedSection[boardId]=selected;
+  const html=`<span class="hd-inner-caption">내부 메뉴</span>${items.map(row=>`<button type="button" data-hd-inner="${esc(row.id)}" data-hd-inner-board="${boardId}" aria-current="${row.id===selected?'page':'false'}">${esc(row.label)}</button>`).join('')}`;
+  let nav=host.querySelector(':scope > .hd-inner-nav');
+  if(!nav){nav=document.createElement('nav');nav.className='hd-inner-nav';nav.setAttribute('aria-label','게시판 내부 메뉴');const heading=host.querySelector(':scope > .u-heading, :scope > .hd-page-head');if(heading)heading.after(nav);else host.prepend(nav);}
+  if(nav.dataset.markup!==html){nav.innerHTML=html;nav.dataset.markup=html;}
+ }
+ function openSection(boardId,id){
+  const row=sections(boardId).find(x=>x.id===id);
+  if(!row||!canShowSection(row))return;
+  const host=$(boardId);
+  if(!host?.classList.contains('active')){if(!navigate?.(boardId))return;}
+  selectedSection[boardId]=id;
+  if(boardId==='view-order'){
+   const storeId=id==='all'?'':id.startsWith('store:')?id.slice(6):null;
+   if(storeId!==null){const button=[...host.querySelectorAll('.u-store-tabs [data-store-id]')].find(x=>x.dataset.storeId===storeId);button?.click();}
+  }else if(boardId==='view-recipe'&&id==='register'&&!host.querySelector('.u-recipe-editor')){
+   host.querySelector('[data-action="open-recipe-register"]')?.click();
+  }
+  innerMenu(boardId);
+  const selector=sectionSelector[boardId]?.[id];
+  const target=selector&&host.querySelector(selector);
+  if(target)requestAnimationFrame(()=>target.scrollIntoView({behavior:'smooth',block:'start'}));
+ }
+ let menuObserver=null,menuScheduled=false;
+ function watchInnerMenus(){
+  if(menuObserver)return;
+  menuObserver=new MutationObserver(records=>{
+   if(records.every(record=>record.target.closest?.('.hd-inner-nav')))return;
+   if(menuScheduled)return;menuScheduled=true;
+   queueMicrotask(()=>{menuScheduled=false;const page=document.querySelector('.spa-page.active');if(page&&sectionMap[page.id])innerMenu(page.id);});
+  });
+  for(const id of Object.keys(sectionMap)){const host=$(id);if(host)menuObserver.observe(host,{childList:true,subtree:true});}
+ }
+
  const base = 'hareharePortal/shared/';
  const db = () => window.HareFirebase?.database;
  const root = () => !!window.HareFirebase?.isRoot?.() && window.HareAdmin?.currentAccount?.()?.id === 'hare01';
@@ -78,8 +149,9 @@
   if(editEvent)editor(editEvent);
  }
  function render(viewId){
-  if(viewId==='view-calendar'){calendarView();return;}
+  if(viewId==='view-calendar')calendarView();
   if(viewId==='view-menu-admin')adminView();
+  if(sectionMap[viewId])innerMenu(viewId);
  }
  function renderDashboard(){monthGrid($('dashboard-calendar'),true);applyMenu();}
  function renderNotices(items){
@@ -99,12 +171,29 @@
   const host=$('view-menu-admin');if(!host||!host.classList.contains('active'))return;
   if(!window.HareAdmin?.canView?.('view-menu-admin')){host.innerHTML='';return;}
   const editable=root(),list=boards();
-  const rows=list.map((row,index)=>`<tr data-hd-board="${row.id}"><td><input data-hd-label value="${esc(row.label)}" maxlength="40" ${editable?'':'disabled'} aria-label="${esc(row.label)} 메뉴 이름"><small>${row.id}</small></td><td><select data-hd-group ${editable?'':'disabled'}><option value="today" ${row.group==='today'?'selected':''}>TODAY</option><option value="resources" ${row.group==='resources'?'selected':''}>자료</option></select></td><td><label><input type="checkbox" data-hd-visible ${row.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label></td><td><label><input type="checkbox" data-hd-home ${row.home?'checked':''} ${editable?'':'disabled'} ${document.querySelector(`#view-dashboard [data-open="${row.id}"]`)?'':'disabled'}> 홈 바로가기</label></td><td><button type="button" data-hd-move="-1" data-hd-id="${row.id}" ${editable&&index>0?'':'disabled'} aria-label="${esc(row.label)} 위로">↑</button><button type="button" data-hd-move="1" data-hd-id="${row.id}" ${editable&&index<list.length-1?'':'disabled'} aria-label="${esc(row.label)} 아래로">↓</button> <button type="button" data-hd-open-board="${row.id}">열기</button></td></tr>`).join('');
+  const accessOptions=(value)=>[['all','모든 사용자'],['staff','로그인 사용자'],['manager','매니저 이상'],['admin','관리자 이상']].map(([id,label])=>`<option value="${id}" ${value===id?'selected':''}>${label}</option>`).join('');
+  const cards=list.map((row,index)=>{
+   const children=sections(row.id);
+   const inner=children.length?`<div class="hd-inner-editor"><div class="hd-inner-editor-head"><span>메뉴 이름</span><span>표시</span><span>메뉴 대상</span><span>기본</span><span>순서</span></div>${children.map((child,i)=>`<div class="hd-inner-editor-row" data-hd-section="${esc(child.id)}"><div><input data-hd-section-label value="${esc(child.label)}" maxlength="40" aria-label="${esc(child.label)} 내부 메뉴 이름" ${editable?'':'disabled'}><small>${esc(child.id)}</small></div><label><input type="checkbox" data-hd-section-visible ${child.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><select data-hd-section-access aria-label="${esc(child.label)} 메뉴 대상" ${editable?'':'disabled'}>${accessOptions(child.access||'all')}</select><label><input type="radio" name="hd-default-${row.id}" data-hd-section-default ${child.default?'checked':''} ${editable?'':'disabled'}> 기본</label><div class="hd-inner-order"><button type="button" data-hd-move-section="-1" ${editable&&i>0?'':'disabled'} aria-label="${esc(child.label)} 위로">↑</button><button type="button" data-hd-move-section="1" ${editable&&i<children.length-1?'':'disabled'} aria-label="${esc(child.label)} 아래로">↓</button></div></div>`).join('')}</div>`:'<p class="hd-muted">이 게시판에는 포털에서 관리할 내부 메뉴가 없습니다.</p>';
+   return `<article class="hd-board-card" data-hd-board="${row.id}"><div class="hd-board-main"><div class="hd-board-name"><input data-hd-label value="${esc(row.label)}" maxlength="40" ${editable?'':'disabled'} aria-label="${esc(row.label)} 게시판 이름"><small>${row.id}</small></div><label>위치<select data-hd-group ${editable?'':'disabled'}><option value="today" ${row.group==='today'?'selected':''}>TODAY</option><option value="resources" ${row.group==='resources'?'selected':''}>자료</option></select></label><label><input type="checkbox" data-hd-visible ${row.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><label><input type="checkbox" data-hd-home ${row.home?'checked':''} ${editable?'':'disabled'} ${document.querySelector(`#view-dashboard [data-open="${row.id}"]`)?'':'disabled'}> 홈 바로가기</label><div class="hd-board-actions"><button type="button" data-hd-move="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(row.label)} 위로">↑</button><button type="button" data-hd-move="1" ${editable&&index<list.length-1?'':'disabled'} aria-label="${esc(row.label)} 아래로">↓</button><button type="button" data-hd-open-board="${row.id}">열기</button></div></div><details class="hd-board-details"><summary>내부 메뉴 관리 <span>${children.length}개</span></summary>${inner}</details></article>`;
+  }).join('');
   const custom=links().map((x,index,all)=>`<div class="hd-custom-row" data-hd-link="${esc(x.id)}"><input data-hd-link-label value="${esc(x.label)}" maxlength="40" aria-label="메뉴 이름" ${editable?'':'disabled'}><input data-hd-link-url value="${esc(x.url)}" type="url" aria-label="메뉴 주소" ${editable?'':'disabled'}><select data-hd-link-group ${editable?'':'disabled'}><option value="today" ${x.group==='today'?'selected':''}>TODAY</option><option value="resources" ${x.group==='resources'?'selected':''}>자료</option></select><label><input type="checkbox" data-hd-link-visible ${x.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><button type="button" data-hd-move-link="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(x.label)} 위로">↑</button><button type="button" data-hd-move-link="1" ${editable&&index<all.length-1?'':'disabled'} aria-label="${esc(x.label)} 아래로">↓</button><button type="button" data-hd-remove-link="${esc(x.id)}" ${editable?'':'disabled'}>삭제</button></div>`).join('');
-  host.innerHTML=`<div class="hd-page-head"><span class="hd-kicker">ADMIN</span><h2>게시판 · 메뉴 관리</h2><p>각 게시판의 메뉴 이름, 위치, 표시 여부와 순서를 한 곳에서 설정합니다. 홈 바로가기는 기존 카드에 적용됩니다.</p></div>${!editable?'<p class="hd-error">공유 메뉴를 저장하려면 최고관리자 hare01로 로그인하세요.</p>':''}${menuError?`<p class="hd-error">${esc(menuError)}</p>`:''}<section class="hd-panel"><div class="hd-table-wrap"><table class="hd-table"><thead><tr><th>게시판</th><th>메뉴 위치</th><th>메뉴</th><th>홈</th><th>순서 · 이동</th></tr></thead><tbody>${rows}</tbody></table></div></section><section class="hd-panel"><h3>추가 메뉴</h3><p class="hd-muted">새 메뉴는 HTTPS 링크로 연결됩니다. 기존 게시판의 내용과 권한은 그대로 유지됩니다.</p><div id="hd-custom-list">${custom}</div>${editable?'<button type="button" data-hd-add-link>+ 링크 메뉴 추가</button>':''}</section>${editable?'<button type="button" class="hd-primary hd-save" data-hd-save>전체 메뉴 저장</button>':''}<p id="hd-menu-status" role="status"></p>`;
+  host.innerHTML=`<div class="hd-page-head"><span class="hd-kicker">ADMIN</span><h2>게시판 · 메뉴 관리</h2><p>게시판을 펼쳐 내부 메뉴 이름, 순서, 표시와 기본 메뉴를 설정합니다. 메뉴 대상은 내부 바로가기 노출에 적용됩니다. 화면 접근 권한은 ‘아이디 · 권한 관리’에서 설정합니다.</p></div>${!editable?'<p class="hd-error">공유 메뉴를 저장하려면 최고관리자 hare01로 로그인하세요.</p>':''}${menuError?`<p class="hd-error">${esc(menuError)}</p>`:''}<section class="hd-panel"><div class="hd-board-list">${cards}</div></section><section class="hd-panel"><h3>추가 메뉴</h3><p class="hd-muted">새 메뉴는 HTTPS 링크로 연결됩니다. 기존 게시판의 내용과 권한은 그대로 유지됩니다.</p><div id="hd-custom-list">${custom}</div>${editable?'<button type="button" data-hd-add-link>+ 링크 메뉴 추가</button>':''}</section>${editable?'<button type="button" class="hd-primary hd-save" data-hd-save>전체 메뉴 저장</button>':''}<p id="hd-menu-status" role="status"></p>`;
  }
  function readAdminForm(){
-  const list=[...document.querySelectorAll('[data-hd-board]')].map(tr=>({id:tr.dataset.hdBoard,label:tr.querySelector('[data-hd-label]').value.trim(),group:tr.querySelector('[data-hd-group]').value,visible:tr.querySelector('[data-hd-visible]').checked,home:tr.querySelector('[data-hd-home]').checked}));
+  const list=[...document.querySelectorAll('[data-hd-board]')].map(card=>{
+   const id=card.dataset.hdBoard,defaults=sectionMap[id]||[];
+   const inner=[...card.querySelectorAll('[data-hd-section]')].map(row=>({
+    id:row.dataset.hdSection,label:row.querySelector('[data-hd-section-label]').value.trim(),
+    visible:row.querySelector('[data-hd-section-visible]').checked,
+    access:row.querySelector('[data-hd-section-access]').value,
+    default:row.querySelector('[data-hd-section-default]').checked
+   }));
+   if(inner.length!==defaults.length||new Set(inner.map(x=>x.id)).size!==inner.length||inner.some(x=>!defaults.some(y=>y[0]===x.id)||!x.label||!['all','staff','manager','admin'].includes(x.access)))throw Error('내부 메뉴의 이름과 대상을 확인해주세요.');
+   if(inner.length&&inner.filter(x=>x.default).length!==1)throw Error('게시판마다 기본 내부 메뉴를 하나 선택해주세요.');
+   if(inner.some(x=>x.visible)&&inner.some(x=>x.default&&x.visible===false))throw Error('숨긴 내부 메뉴는 기본 메뉴로 선택할 수 없습니다.');
+   return {id,label:card.querySelector('[data-hd-label]').value.trim(),group:card.querySelector('[data-hd-group]').value,visible:card.querySelector('[data-hd-visible]').checked,home:card.querySelector('[data-hd-home]').checked,sections:inner};
+  });
   if(list.length!==builtins.length||list.some(x=>!x.label||!['today','resources'].includes(x.group)))throw Error('게시판 메뉴 이름과 위치를 확인해주세요.');
   const custom=[...document.querySelectorAll('[data-hd-link]')].map(row=>({id:row.dataset.hdLink,label:row.querySelector('[data-hd-link-label]').value.trim(),url:row.querySelector('[data-hd-link-url]').value.trim(),group:row.querySelector('[data-hd-link-group]').value,visible:row.querySelector('[data-hd-link-visible]').checked}));
   if(custom.length>30||custom.some(x=>!x.label||!/^https:\/\//i.test(x.url)||!['today','resources'].includes(x.group)))throw Error('추가 메뉴의 이름과 HTTPS 주소를 확인해주세요.');
@@ -114,6 +203,10 @@
   for(const row of document.querySelectorAll('[data-hd-board]')){
    row.querySelector('[data-hd-move="-1"]').disabled=!row.previousElementSibling;
    row.querySelector('[data-hd-move="1"]').disabled=!row.nextElementSibling;
+   for(const child of row.querySelectorAll('[data-hd-section]')){
+    child.querySelector('[data-hd-move-section="-1"]').disabled=!child.previousElementSibling?.matches('[data-hd-section]');
+    child.querySelector('[data-hd-move-section="1"]').disabled=!child.nextElementSibling?.matches('[data-hd-section]');
+   }
   }
   for(const row of document.querySelectorAll('[data-hd-link]')){
    row.querySelector('[data-hd-move-link="-1"]').disabled=!row.previousElementSibling;
@@ -130,13 +223,13 @@
  function shiftMonth(change){const [year,num]=month.split('-').map(Number);const date=new Date(Date.UTC(year,num-1+change,1));month=date.toISOString().slice(0,7);selected=month+'-01';renderDashboard();calendarView();}
  function init(go){
   navigate=go;if(subscribed)return;subscribed=true;
-  renderDashboard();
+  renderDashboard();watchInnerMenus();
   if(!db()){readError='Firebase에 연결하지 못했습니다. 일정을 불러올 수 없습니다.';calendarView();return;}
   db().ref(base+'calendarEvents').on('value',snap=>{events=snap.val()||{};readError='';renderDashboard();calendarView();},err=>{readError='일정 읽기 실패: '+err.message;calendarView();});
-  db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
+  db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
  }
  document.addEventListener('click',async event=>{
-  const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-move],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save]');
+  const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-inner],[data-hd-move],[data-hd-move-section],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save]');
   if(!btn)return;
   try{
    if(btn.dataset.hdDate){selected=btn.dataset.hdDate;month=selected.slice(0,7);renderDashboard();if(!btn.closest('#view-calendar'))navigate?.('view-calendar');else calendarView();return;}
@@ -149,8 +242,10 @@
    if(btn.dataset.hdDelete){if(!root())throw Error('최고관리자 로그인이 필요합니다.');if(confirm('이 일정을 삭제할까요?'))await db().ref(base+'calendarEvents').child(btn.dataset.hdDelete).remove();return;}
    if(btn.hasAttribute('data-hd-cancel')){editEvent='';$('hd-editor').innerHTML='';return;}
    if(btn.dataset.hdOpenBoard){navigate?.(btn.dataset.hdOpenBoard);return;}
+   if(btn.dataset.hdInner){openSection(btn.dataset.hdInnerBoard,btn.dataset.hdInner);return;}
    if(!root())throw Error('최고관리자 로그인이 필요합니다.');
-   if(btn.dataset.hdMove){const row=btn.closest('tr'),next=Number(btn.dataset.hdMove)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMove)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
+   if(btn.dataset.hdMove){const row=btn.closest('[data-hd-board]'),next=Number(btn.dataset.hdMove)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMove)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
+   if(btn.dataset.hdMoveSection){const row=btn.closest('[data-hd-section]'),next=Number(btn.dataset.hdMoveSection)<0?row.previousElementSibling:row.nextElementSibling;if(next?.matches('[data-hd-section]')){if(Number(btn.dataset.hdMoveSection)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
    if(btn.dataset.hdMoveLink){const row=btn.closest('[data-hd-link]'),next=Number(btn.dataset.hdMoveLink)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMoveLink)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
    if(btn.hasAttribute('data-hd-add-link')){const host=$('hd-custom-list'),row=document.createElement('div');row.className='hd-custom-row';row.dataset.hdLink='link-'+crypto.randomUUID();row.innerHTML='<input data-hd-link-label maxlength="40" placeholder="메뉴 이름" aria-label="메뉴 이름"><input data-hd-link-url type="url" placeholder="https://" aria-label="메뉴 주소"><select data-hd-link-group><option value="today">TODAY</option><option value="resources">자료</option></select><label><input type="checkbox" data-hd-link-visible checked> 표시</label><button type="button" data-hd-move-link="-1" aria-label="위로">↑</button><button type="button" data-hd-move-link="1" aria-label="아래로">↓</button><button type="button" data-hd-remove-link>삭제</button>';host.append(row);syncOrderButtons();row.querySelector('input').focus();return;}
    if(btn.hasAttribute('data-hd-remove-link')){btn.closest('[data-hd-link]').remove();syncOrderButtons();return;}
@@ -168,6 +263,6 @@
    editEvent='';selected=date;month=date.slice(0,7);calendarView();
   }catch(err){status.textContent='저장하지 못했습니다: '+err.message;}
  });
- window.addEventListener('hare-admin-change',()=>{editEvent='';applyMenu();calendarView();adminView();});
+ window.addEventListener('hare-admin-change',()=>{editEvent='';applyMenu();calendarView();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);});
  window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu};
 })();
