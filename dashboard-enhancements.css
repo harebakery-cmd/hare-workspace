@@ -99,3 +99,36 @@ html[data-theme="dark"] .hd-primary,.dark .hd-primary{background:#eee!important;
 html[data-theme="dark"] .hd-inner-nav button[aria-current="page"],.dark .hd-inner-nav button[aria-current="page"]{background:#eee;color:#111;border-color:#eee}
 @media(max-width:900px){.hd-board-main{grid-template-columns:minmax(150px,1fr) minmax(95px,auto) auto;gap:10px}.hd-board-actions{grid-column:1/-1}.hd-inner-editor-head{display:none}.hd-inner-editor-row{grid-template-columns:minmax(150px,1fr) minmax(120px,1fr);gap:10px}.hd-inner-order{grid-column:1/-1}}
 @media(max-width:520px){.hd-board-main{grid-template-columns:minmax(0,1fr) auto}.hd-board-name{grid-column:1/-1}.hd-board-main label{white-space:normal}.hd-board-actions{flex-wrap:wrap}.hd-inner-editor-row{grid-template-columns:minmax(0,1fr) auto}.hd-inner-editor-row>div:first-child{grid-column:1/-1}.hd-inner-editor-row select{grid-column:1/-1}.hd-inner-nav{padding:8px}.hd-inner-caption{width:100%}}
+
+
+/* Keep form controls inside their grid cells and make access wording readable. */
+.hd-board-main{grid-template-columns:minmax(0,2fr) minmax(150px,1fr) max-content max-content max-content;align-items:end;gap:12px 16px}
+.hd-board-main input:not([type="checkbox"]),.hd-board-main select,.hd-inner-editor input:not([type="checkbox"]):not([type="radio"]),.hd-inner-editor select{box-sizing:border-box;max-width:100%}
+.hd-board-main>label:nth-child(2){display:flex;flex-direction:column;gap:5px;min-width:0;width:100%}
+.hd-board-main>label:nth-child(2) select{width:100%}
+.hd-board-main>label:nth-child(3),.hd-board-main>label:nth-child(4){display:inline-flex;align-items:center;gap:5px;min-width:max-content;padding-bottom:9px}
+.hd-board-actions{justify-content:flex-end;flex-wrap:nowrap;padding-bottom:4px}
+.hd-inner-editor-head,.hd-inner-editor-row{grid-template-columns:minmax(0,2fr) 88px minmax(170px,1fr) 80px 116px;gap:12px}
+.hd-inner-editor-row>label{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.hd-inner-order{justify-content:flex-end;gap:5px}
+.hd-inner-order button{box-sizing:border-box;min-width:42px;padding-inline:7px}
+.hd-access-help{margin-top:8px!important;line-height:1.55}
+.hd-access-help strong{color:inherit}
+@media(max-width:1000px){
+ .hd-board-main{grid-template-columns:minmax(0,1fr) minmax(140px,220px) max-content max-content}
+ .hd-board-actions{grid-column:1/-1}
+ .hd-inner-editor-head{display:none}
+ .hd-inner-editor-row{grid-template-columns:minmax(0,1fr) minmax(150px,1fr)}
+ .hd-inner-editor-row>div:first-child{grid-column:1/-1}
+ .hd-inner-order{grid-column:2;justify-content:flex-start}
+}
+@media(max-width:650px){
+ .hd-board-main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+ .hd-board-name{grid-column:1/-1}
+ .hd-board-main>label:nth-child(2){grid-column:1/-1}
+ .hd-board-main>label:nth-child(3),.hd-board-main>label:nth-child(4){padding-bottom:0}
+ .hd-board-actions{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
+ .hd-inner-editor-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .hd-inner-editor-row>select{grid-column:1/-1}
+ .hd-inner-order{grid-column:2}
+}
