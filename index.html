@@ -675,9 +675,9 @@ function admin(){return ['admin','super'].includes(user()?.role);}
 function highest(){return user()?.role==='super';}
 function requireAdmin(){if(!admin())throw Error('관리자 로그인이 필요합니다.');}
 function requireSuper(){if(!highest())throw Error('최고관리자만 변경할 수 있습니다.');}
-function canView(id){if(id==='view-dashboard')return true;const u=user();if(primaryScreens.includes(id)||(db.publicScreens||primaryScreens).includes(id))return true;if(!u)return false;if(id==='view-order')return true;if(adminViews.includes(id))return admin();if(u.role==='super')return true;return (u.screenPermissions??db.permissions[u.role]??[]).includes(id);}
+function canView(id){if(id==='view-dashboard')return true;const u=user();if(primaryScreens.includes(id)||(db.publicScreens||primaryScreens).includes(id))return true;if(!u)return false;if(id==='view-order')return true;if(id==='view-accounts'||id==='view-admin')return highest();if(id==='view-menu-admin')return admin();if(u.role==='super')return true;return (u.screenPermissions??db.permissions[u.role]??[]).includes(id);}
 function emit(){window.dispatchEvent(new Event('hare-admin-change'));}
-function save(next){requireAdmin();if(error)throw Error(error);if(localStorage.getItem(KEY)!==raw)throw Error('다른 창에서 계정이 변경되었습니다. 화면을 새로고침해주세요.');validate(next);const text=JSON.stringify(next);localStorage.setItem(KEY,text);db=next;raw=text;emit();}
+function save(next){requireSuper();if(error)throw Error(error);if(localStorage.getItem(KEY)!==raw)throw Error('다른 창에서 계정이 변경되었습니다. 화면을 새로고침해주세요.');validate(next);const text=JSON.stringify(next);localStorage.setItem(KEY,text);db=next;raw=text;emit();}
 const hex=a=>Array.from(a,b=>b.toString(16).padStart(2,'0')).join('');
 async function hash(password,salt){if(!crypto.subtle)throw Error('암호화 기능을 지원하는 브라우저에서 열어주세요.');const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);return hex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:310000,hash:'SHA-256'},key,256)));}
 function close(){$('admin-login-dialog').classList.add('hidden');$('admin-login-dialog').classList.remove('flex');$('admin-login-btn').focus();}
@@ -706,10 +706,10 @@ function render(id){if(!adminViews.includes(id)||id==='view-menu-admin')return;c
 document.addEventListener('submit',e=>{if(['account-form','firebase-form','public-permissions-form'].includes(e.target.id))e.preventDefault();});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-access-action]');if(!b)return;const section=b.closest('.spa-page'),message=()=>b.closest('form')?.querySelector('[role="status"]')||section?.querySelector('[role="status"]');b.disabled=true;try{requireAdmin();switch(b.dataset.accessAction){
  case'save-public':{requireSuper();const next=clone(db);next.publicScreens=[...new Set([...primaryScreens,...new FormData($('public-permissions-form')).getAll('publicScreens')])];save(next);render('view-accounts');$('public-message').textContent='누구나 권한을 저장했습니다.';break;}
- case'new-user':accountEdit='';render('view-accounts');break;
- case'edit-user':{const u=db.users.find(u=>u.id===b.dataset.id);if(!u)throw Error('계정을 찾을 수 없습니다.');if(['super','admin'].includes(u.role))requireSuper();accountEdit=u.id;render('view-accounts');break;}
+ case'new-user':requireSuper();accountEdit='';render('view-accounts');break;
+ case'edit-user':{requireSuper();const u=db.users.find(u=>u.id===b.dataset.id);if(!u)throw Error('계정을 찾을 수 없습니다.');if(['super','admin'].includes(u.role))requireSuper();accountEdit=u.id;render('view-accounts');break;}
  case'save-user':{
-  const f=$('account-form');if(!f.reportValidity())break;const d=new FormData(f),id=d.get('id').trim(),old=db.users.find(u=>u.id===id);
+  requireSuper();const f=$('account-form');if(!f.reportValidity())break;const d=new FormData(f),id=d.get('id').trim(),old=db.users.find(u=>u.id===id);
   if(!accountEdit&&old)throw Error('이미 사용 중인 아이디입니다.');if(accountEdit&&id!==accountEdit)throw Error('수정 중인 아이디는 변경할 수 없습니다.');
   if(old&&['super','admin'].includes(old.role))requireSuper();const role=id==='hare01'?'super':d.get('role');if(['admin','super'].includes(role))requireSuper();
   if(!Object.hasOwn(db.roles,role))throw Error('직급을 확인해주세요.');
@@ -717,7 +717,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acce
   const u={id,name:id==='hare01'?'관리자':d.get('name').trim(),department:id==='hare01'?'':d.get('department').trim(),jobTitle:id==='hare01'?'':d.get('jobTitle').trim(),displayStyle:id==='hare01'?'name-store-title':d.get('displayStyle'),role,screenPermissions:id==='hare01'?menus.map(x=>x[0]):d.getAll('screenPermissions'),active:id==='hare01'?true:d.has('active'),salt:old?.salt,hash:old?.hash};
   if(!old&&!password)throw Error('비밀번호를 입력해주세요.');
   if(password){u.salt=hex(crypto.getRandomValues(new Uint8Array(24)));u.hash=await hash(password,u.salt);}
-  requireAdmin();if(raw!==expectedRaw)throw Error('계정이 변경되었습니다. 다시 저장해주세요.');
+  requireSuper();if(raw!==expectedRaw)throw Error('계정이 변경되었습니다. 다시 저장해주세요.');
   const index=next.users.findIndex(x=>x.id===id);if(index>=0)next.users[index]=u;else next.users.push(u);
   save(next);accountEdit='';render('view-accounts');if(message())message().textContent='계정을 저장했습니다.';break;
  }
@@ -746,7 +746,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acce
   status.textContent='완료했습니다. 생산 일지 화면을 새로고침해 과거 기록을 확인해주세요.';break;
  }
  case'save-firebase':{
-  const f=$('firebase-form');if(!f.reportValidity())break;const d=new FormData(f),c=Object.fromEntries([...d].map(([k,v])=>[k,v.trim()]));
+  requireSuper();const f=$('firebase-form');if(!f.reportValidity())break;const d=new FormData(f),c=Object.fromEntries([...d].map(([k,v])=>[k,v.trim()]));
   const url=new URL(c.databaseURL);if(url.protocol!=='https:'||url.username||url.password||url.port||!(/\.firebaseio\.com$|\.firebasedatabase\.app$/).test(url.hostname)||url.pathname!=='/'||url.search||url.hash)throw Error('Firebase Realtime Database의 HTTPS 루트 주소를 입력해주세요.');
   if(!/^[a-z0-9-]+\.firebaseapp\.com$/.test(c.authDomain)||!/^[-a-z0-9]+$/.test(c.projectId))throw Error('Project ID와 Auth Domain을 확인해주세요.');
   if(c.projectId!=='hare-workspace'||c.databaseURL!==window.HareFirebase.config.databaseURL)throw Error('이 포털은 hare-workspace 프로젝트에 연결되어 있습니다. 설정을 바꾸지 마세요.');c.updatedAt=new Date().toISOString();localStorage.setItem(CONFIG,JSON.stringify(c));$('firebase-message').textContent='hare-workspace 연결 정보를 확인했습니다. 보안 규칙을 게시하고 새로고침하면 동기화됩니다.';break;
