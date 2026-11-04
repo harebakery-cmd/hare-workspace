@@ -63,7 +63,7 @@
   selectedSection[boardId]=id;
   if(boardId==='view-order'){
    const storeId=id==='all'?'':id.startsWith('store:')?id.slice(6):null;
-   if(storeId!==null){const button=[...host.querySelectorAll('.u-store-tabs [data-store-id]')].find(x=>x.dataset.storeId===storeId);button?.click();}
+   if(storeId!==null){const button=[...host.querySelectorAll('.u-store-tabs [data-store-id]')].find(x=>x.dataset.storeId===storeId);if(button?.getAttribute('aria-pressed')!=='true')button?.click();}
   }else if(boardId==='view-recipe'&&id==='register'&&!host.querySelector('.u-recipe-editor')){
    host.querySelector('[data-action="open-recipe-register"]')?.click();
   }
