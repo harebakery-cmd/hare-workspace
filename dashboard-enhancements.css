@@ -132,3 +132,46 @@ html[data-theme="dark"] .hd-inner-nav button[aria-current="page"],.dark .hd-inne
  .hd-inner-editor-row>select{grid-column:1/-1}
  .hd-inner-order{grid-column:2}
 }
+
+
+/* Match the sidebar menu type scale and neutralize the admin-only field borders. */
+#view-menu-admin .hd-board-card,
+#view-menu-admin .hd-board-card input,
+#view-menu-admin .hd-board-card select,
+#view-menu-admin .hd-board-card button,
+#view-menu-admin .hd-board-details summary,
+#view-menu-admin .hd-inner-editor-row,
+#view-menu-admin .hd-custom-row,
+#view-menu-admin .hd-custom-row input,
+#view-menu-admin .hd-custom-row select,
+#view-menu-admin .hd-custom-row button,
+#view-menu-admin [data-hd-add-link],
+#view-menu-admin [data-hd-save]{
+ font-size:14px;
+}
+#view-menu-admin .hd-page-head p,
+#view-menu-admin .hd-access-help,
+#view-menu-admin .hd-muted{font-size:14px}
+#view-menu-admin .hd-inner-editor-head{font-size:13px}
+#view-menu-admin .hd-board-name small,
+#view-menu-admin .hd-inner-editor-row small{font-size:12px}
+#view-menu-admin input:not([type="checkbox"]):not([type="radio"]),
+#view-menu-admin select{
+ border:1px solid rgba(120,120,120,.28)!important;
+ box-shadow:none!important;
+ outline:none;
+}
+#view-menu-admin input:not([type="checkbox"]):not([type="radio"]):focus,
+#view-menu-admin select:focus{
+ outline:none!important;
+ box-shadow:none!important;
+ border-color:rgba(90,90,90,.55)!important;
+}
+#view-menu-admin input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+#view-menu-admin select:focus-visible{
+ outline:1px solid currentColor!important;
+ outline-offset:1px!important;
+}
+
+#view-menu-admin .hd-board-main label,
+#view-menu-admin .hd-custom-row label{font-size:14px}
