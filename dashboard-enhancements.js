@@ -86,7 +86,7 @@
  const base = 'hareharePortal/shared/';
  const db = () => window.HareFirebase?.database;
  const root = () => !!window.HareFirebase?.isRoot?.() && window.HareAdmin?.currentAccount?.()?.id === 'hare01';
- const menuManager = () => ['admin','super'].includes(window.HareAdmin?.currentAccount?.()?.role);
+ const menuManager = () => {const account=window.HareAdmin?.currentAccount?.(),uid=window.HareFirebase?.auth?.currentUser?.uid;if(account?.role==='super')return root();return account?.role==='admin'&&!!account.firebaseUid&&uid===account.firebaseUid;};
  const kstToday = () => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value+'T00:00:00Z').valueOf()) && new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
  const labelDate = value => value.replaceAll('-','.');
@@ -184,7 +184,7 @@
    return `<article class="hd-board-card" data-hd-board="${row.id}"><div class="hd-board-main"><div class="hd-board-name"><input data-hd-label value="${esc(row.label)}" maxlength="40" ${editable?'':'disabled'} aria-label="${esc(row.label)} 게시판 이름"><small>${row.id}</small></div><label>위치<select data-hd-group ${editable?'':'disabled'}><option value="today" ${row.group==='today'?'selected':''}>TODAY</option><option value="resources" ${row.group==='resources'?'selected':''}>자료</option></select></label><label><input type="checkbox" data-hd-visible ${row.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><label><input type="checkbox" data-hd-home ${row.home?'checked':''} ${editable?'':'disabled'} ${document.querySelector(`#view-dashboard [data-open="${row.id}"]`)?'':'disabled'}> 홈 바로가기</label><div class="hd-board-actions"><button type="button" data-hd-move="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(row.label)} 위로">↑</button><button type="button" data-hd-move="1" ${editable&&index<list.length-1?'':'disabled'} aria-label="${esc(row.label)} 아래로">↓</button><button type="button" data-hd-open-board="${row.id}">열기</button></div></div><details class="hd-board-details"><summary>내부 메뉴 관리 <span>${children.length}개</span></summary>${inner}</details></article>`;
   }).join('');
   const custom=links().map((x,index,all)=>`<div class="hd-custom-row" data-hd-link="${esc(x.id)}"><input data-hd-link-label value="${esc(x.label)}" maxlength="40" aria-label="메뉴 이름" ${editable?'':'disabled'}><input data-hd-link-url value="${esc(x.url)}" type="url" aria-label="메뉴 주소" ${editable?'':'disabled'}><select data-hd-link-group ${editable?'':'disabled'}><option value="today" ${x.group==='today'?'selected':''}>TODAY</option><option value="resources" ${x.group==='resources'?'selected':''}>자료</option></select><label><input type="checkbox" data-hd-link-visible ${x.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><button type="button" data-hd-move-link="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(x.label)} 위로">↑</button><button type="button" data-hd-move-link="1" ${editable&&index<all.length-1?'':'disabled'} aria-label="${esc(x.label)} 아래로">↓</button><button type="button" data-hd-remove-link="${esc(x.id)}" ${editable?'':'disabled'}>삭제</button></div>`).join('');
-  host.innerHTML=`<div class="hd-page-head"><span class="hd-kicker">ADMIN</span><h2>게시판 · 메뉴 관리</h2><p>게시판을 펼쳐 내부 메뉴의 이름, 순서, 표시 여부와 기본 항목을 설정합니다.</p><p class="hd-access-help"><strong>바로가기 표시 대상</strong>은 내부 메뉴 버튼의 노출 범위입니다. 게시글 읽기·글쓰기 권한은 변경되지 않습니다. 화면 접근 권한은 ‘아이디 · 권한 관리’에서 설정합니다.</p></div>${!editable?'<p class="hd-error">공유 메뉴를 저장하려면 관리자 또는 최고관리자로 로그인하세요.</p>':''}${menuError?`<p class="hd-error">${esc(menuError)}</p>`:''}<section class="hd-panel"><div class="hd-board-list">${cards}</div></section><section class="hd-panel"><h3>추가 메뉴</h3><p class="hd-muted">새 메뉴는 HTTPS 링크로 연결됩니다. 기존 게시판의 내용과 권한은 그대로 유지됩니다.</p><div id="hd-custom-list">${custom}</div>${editable?'<button type="button" data-hd-add-link>+ 링크 메뉴 추가</button>':''}</section>${editable?'<button type="button" class="hd-primary hd-save" data-hd-save>전체 메뉴 저장</button>':''}<p id="hd-menu-status" role="status"></p>`;
+  host.innerHTML=`<div class="hd-page-head"><span class="hd-kicker">ADMIN</span><h2>게시판 · 메뉴 관리</h2><p>게시판을 펼쳐 내부 메뉴의 이름, 순서, 표시 여부와 기본 항목을 설정합니다.</p><p class="hd-access-help"><strong>바로가기 표시 대상</strong>은 내부 메뉴 버튼의 노출 범위입니다. 게시글 읽기·글쓰기 권한은 변경되지 않습니다. 화면 접근 권한은 ‘아이디 · 권한 관리’에서 설정합니다.</p></div>${!editable?'<p class="hd-error">게시판 메뉴 저장에는 Firebase 인증이 연결된 관리자 계정 또는 최고관리자 로그인이 필요합니다.</p>':''}${menuError?`<p class="hd-error">${esc(menuError)}</p>`:''}<section class="hd-panel"><div class="hd-board-list">${cards}</div></section><section class="hd-panel"><h3>추가 메뉴</h3><p class="hd-muted">새 메뉴는 HTTPS 링크로 연결됩니다. 기존 게시판의 내용과 권한은 그대로 유지됩니다.</p><div id="hd-custom-list">${custom}</div>${editable?'<button type="button" data-hd-add-link>+ 링크 메뉴 추가</button>':''}</section>${editable?'<button type="button" class="hd-primary hd-save" data-hd-save>전체 메뉴 저장</button>':''}<p id="hd-menu-status" role="status"></p>`;
  }
  function readAdminForm(){
   const list=[...document.querySelectorAll('[data-hd-board]')].map(card=>{
@@ -220,7 +220,7 @@
   }
  }
  async function saveMenu(){
-  if(!menuManager())throw Error('관리자 로그인이 필요합니다.');if(!db())throw Error('Firebase 연결을 확인해주세요.');
+  if(!menuManager())throw Error('Firebase 인증이 연결된 관리자 로그인이 필요합니다.');if(!db())throw Error('Firebase 연결을 확인해주세요.');
   const next=readAdminForm(),ref=db().ref(base+'menuConfig'),expected=JSON.stringify(configRaw);
   let result;try{result=await ref.transaction(current=>JSON.stringify(current)===expected?next:undefined,undefined,false);}catch(err){if(err.code==='PERMISSION_DENIED')throw Error('Firebase 메뉴 저장 규칙이 이 관리자 계정의 쓰기를 허용하지 않습니다. Firebase 인증 및 규칙 설정을 확인해주세요.');throw err;}
   if(!result.committed)throw Error('다른 곳에서 메뉴가 변경되었습니다. 새로 받은 설정을 확인한 뒤 다시 저장해주세요.');
@@ -249,7 +249,7 @@
    if(btn.hasAttribute('data-hd-cancel')){editEvent='';$('hd-editor').innerHTML='';return;}
    if(btn.dataset.hdOpenBoard){navigate?.(btn.dataset.hdOpenBoard);return;}
    if(btn.dataset.hdInner){openSection(btn.dataset.hdInnerBoard,btn.dataset.hdInner);return;}
-   if(!menuManager())throw Error('관리자 로그인이 필요합니다.');
+   if(!menuManager())throw Error('Firebase 인증이 연결된 관리자 로그인이 필요합니다.');
    if(btn.dataset.hdMove){const row=btn.closest('[data-hd-board]'),next=Number(btn.dataset.hdMove)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMove)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
    if(btn.dataset.hdMoveSection){const row=btn.closest('[data-hd-section]'),next=Number(btn.dataset.hdMoveSection)<0?row.previousElementSibling:row.nextElementSibling;if(next?.matches('[data-hd-section]')){if(Number(btn.dataset.hdMoveSection)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
    if(btn.dataset.hdMoveLink){const row=btn.closest('[data-hd-link]'),next=Number(btn.dataset.hdMoveLink)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMoveLink)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
