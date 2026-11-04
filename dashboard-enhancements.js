@@ -148,10 +148,15 @@
   monthGrid($('hd-full-calendar'),false);
   if(editEvent)editor(editEvent);
  }
+ let lastRenderedView='';
  function render(viewId){
+  const entering=lastRenderedView!==viewId;lastRenderedView=viewId;
   if(viewId==='view-calendar')calendarView();
   if(viewId==='view-menu-admin')adminView();
-  if(sectionMap[viewId])innerMenu(viewId);
+  if(sectionMap[viewId]){
+   innerMenu(viewId);
+   if(entering)requestAnimationFrame(()=>{const items=sections(viewId).filter(canShowSection),target=items.find(x=>x.default)||items[0];if(target)openSection(viewId,target.id);});
+  }
  }
  function renderDashboard(){monthGrid($('dashboard-calendar'),true);applyMenu();}
  function renderNotices(items){
