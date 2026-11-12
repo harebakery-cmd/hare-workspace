@@ -25,6 +25,10 @@ Firebase 콘솔 → Realtime Database → 규칙에서 **전체를 교체하여 
           ".read": true,
           ".write": "auth !== null && auth.uid === '2gGRDUrXlyNwMpw1xpLA3iH35Fd2'"
         },
+        "historyImports": {
+          ".read": "auth !== null && auth.uid === '2gGRDUrXlyNwMpw1xpLA3iH35Fd2'",
+          ".write": "auth !== null && auth.uid === '2gGRDUrXlyNwMpw1xpLA3iH35Fd2'"
+        },
         "bulletin": {
           ".read": true,
           ".write": true
@@ -118,6 +122,6 @@ Firebase 콘솔 → Realtime Database → 규칙에서 **전체를 교체하여 
 }
 ```
 
-게시 후 최고관리자 hare01로 로그인해 승인 대기 목록이 읽히는지 확인하세요. `moduleConfig` 규칙은 업무 메뉴·품목 설정 저장에 필요하며, 최고관리자 UID만 수정할 수 있습니다. 직급자 테스트 계정 한 개로 신청 → 승인 → 로그인 → 메뉴 저장을 순서대로 확인하세요. Firebase Authentication의 이메일/비밀번호 제공자가 켜져 있어야 합니다. 이메일 링크 인증은 사용하지 않습니다.
+게시 후 최고관리자 hare01로 로그인해 승인 대기 목록이 읽히는지 확인하세요. `moduleConfig` 규칙은 업무 메뉴·품목 설정 저장에 필요하고, `historyImports`는 이전 기록의 보관과 조회에 필요합니다. 두 경로는 최고관리자 UID만 읽고 쓸 수 있습니다. 직급자 테스트 계정 한 개로 신청 → 승인 → 로그인 → 메뉴 저장을 순서대로 확인하세요. Firebase Authentication의 이메일/비밀번호 제공자가 켜져 있어야 합니다. 이메일 링크 인증은 사용하지 않습니다.
 
 기존 hare02 같은 브라우저별 수동 계정은 자동 이관되지 않습니다. 같은 신청 아이디로 가입하더라도 새 이메일·비밀번호 계정은 최고관리자 승인 후 이용합니다.
