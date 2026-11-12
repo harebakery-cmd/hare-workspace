@@ -156,6 +156,7 @@
    }
    host.append(group);
   }
+  ensureModuleScreenStyles();
   normalizeSidebarIcons();
  }
  let moduleScreenTitle='',moduleNavCloseBound=false;
