@@ -106,7 +106,7 @@
  const kstToday = () => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value+'T00:00:00Z').valueOf()) && new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
  const labelDate = value => value.replaceAll('-','.');
- let navigate = null, selected = kstToday(), month = selected.slice(0,7), events = {}, config = null, configRaw = null, moduleConfig = {}, moduleConfigRaw = null, historyImports = {}, pendingImport = null, readError = '', menuError = '', editEvent = '', subscribed = false;
+ let navigate = null, selected = kstToday(), month = selected.slice(0,7), events = {}, config = null, configRaw = null, moduleConfig = {}, moduleConfigRaw = null, historyImports = {}, historyListener = null, pendingImport = null, readError = '', menuError = '', editEvent = '', subscribed = false;
  function boards(){
   const saved = Array.isArray(config?.boards) ? config.boards : [];
   const byId = new Map(saved.filter(row => builtinIds.has(row?.id)).map(row => [row.id,row]));
@@ -140,7 +140,7 @@
   if(row.mode==='external'){window.open(url,'_blank','noopener,noreferrer');return;}
   closeModule();
   const layer=document.createElement('div');layer.className='hd-app-overlay';layer.innerHTML='<div class="hd-app-dialog" role="dialog" aria-modal="true" aria-label="'+esc(row.label)+'"><header class="hd-app-toolbar"><strong>'+esc(row.label)+'</strong><button type="button" data-hd-module-close aria-label="업무 화면 닫기">닫기</button></header><iframe class="hd-app-frame" title="'+esc(row.label)+'" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
-  const frame=layer.querySelector('iframe');frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'hare-workspace:module-config',moduleId:id,settings:window.HareWorkspace?.getModuleSettings(id)||null},location.origin));frame.src=url;
+  const frame=layer.querySelector('iframe');frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'hare-workspace:module-config',moduleId:id,settings:window.HareWorkspace?.getModuleSettings(id)||null,history:window.HareWorkspace?.getHistoryImports(id)||[]},location.origin));frame.src=url;
   layer.addEventListener('click',event=>{if(event.target===layer)closeModule();});
   document.body.append(layer);
  }
@@ -359,6 +359,15 @@
   configRaw=result.snapshot.val();config=configRaw;applyMenu();adminView();$('hd-menu-status').textContent='Firebase에 메뉴를 저장했습니다.';
  }
  function shiftMonth(change){const [year,num]=month.split('-').map(Number);const date=new Date(Date.UTC(year,num-1+change,1));month=date.toISOString().slice(0,7);selected=month+'-01';renderDashboard();calendarView();}
+ function syncHistoryImports(){
+  if(!db())return;
+  const ref=db().ref(base+'historyImports');
+  if(root()){
+   if(historyListener)return;
+   historyListener=snap=>{historyImports=snap.val()||{};moduleSettingsMarkup();};
+   ref.on('value',historyListener,err=>{historyListener=null;const status=$('hd-module-status');if(status)status.textContent='이전 기록 목록을 읽지 못했습니다. Firebase Rules를 확인해주세요.';});
+  }else if(historyListener){ref.off('value',historyListener);historyListener=null;historyImports={};}
+ }
  function init(go){
   navigate=go;if(subscribed)return;subscribed=true;
   renderDashboard();watchInnerMenus();
@@ -366,7 +375,7 @@
   db().ref(base+'calendarEvents').on('value',snap=>{events=snap.val()||{};readError='';renderDashboard();calendarView();},err=>{readError='일정 읽기 실패: '+err.message;calendarView();});
   db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
   db().ref(base+'moduleConfig').on('value',snap=>{moduleConfigRaw=snap.exists()?snap.val():{};moduleConfig=moduleConfigRaw||{};localStorage.setItem('harePortalModuleConfig',JSON.stringify(moduleConfig));applyMenu();moduleSettingsMarkup();},err=>{moduleConfigRaw=null;moduleConfig={};const status=$('hd-module-settings');if(status)status.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-error">업무 설정을 읽지 못했습니다. Firebase Rules에 moduleConfig 읽기 규칙이 있는지 확인해주세요.</p>';});
-  db().ref(base+'historyImports').on('value',snap=>{historyImports=snap.val()||{};moduleSettingsMarkup();},err=>{const status=$('hd-module-status');if(status)status.textContent='이전 기록 목록을 읽지 못했습니다. Firebase Rules를 확인해주세요.';});
+  syncHistoryImports();
  }
  document.addEventListener('click',async event=>{
   const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-inner],[data-hd-move],[data-hd-move-section],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save],[data-hd-module],[data-hd-module-close],[data-hd-modules-save],[data-hd-import-preview],[data-hd-import-save]');
@@ -417,7 +426,7 @@
    editEvent='';selected=date;month=date.slice(0,7);calendarView();
   }catch(err){status.textContent='저장하지 못했습니다: '+err.message;}
  });
- window.addEventListener('hare-admin-change',()=>{editEvent='';applyMenu();calendarView();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);});
+ window.addEventListener('hare-admin-change',()=>{syncHistoryImports();editEvent='';applyMenu();calendarView();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);});
  window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu};
- window.HareWorkspace={modules,getModuleSettings:id=>modules().find(x=>x.id===id)||null,openModule};
+ window.HareWorkspace={modules,getModuleSettings:id=>modules().find(x=>x.id===id)||null,getHistoryImports:id=>Object.values(historyImports||{}).filter(x=>!id||x.moduleId===id),openModule};
 })();
