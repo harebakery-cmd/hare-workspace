@@ -203,3 +203,18 @@ html[data-theme="dark"] .hd-inner-nav button[aria-current="page"],.dark .hd-inne
  .hd-app-toolbar{padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
 }
 @media(prefers-reduced-motion:reduce){.hd-app-menu-button{transition:none}}
+
+.hd-import-panel{display:grid;gap:12px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(128,128,128,.2)}
+.hd-import-panel h4{margin:0;font-size:15px}
+.hd-import-panel>label{display:grid;gap:6px;max-width:400px;font-size:13px}
+.hd-import-panel select,.hd-import-controls input{box-sizing:border-box;max-width:100%;border:1px solid rgba(120,120,120,.28);border-radius:9px;padding:9px 10px;background:transparent;color:inherit;font:inherit}
+.hd-import-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hd-import-controls button,.hd-import-preview button{border:0;border-radius:9px;padding:10px 14px;background:#343831;color:#fff;font:inherit;cursor:pointer}
+.hd-import-preview{display:grid;gap:10px}
+.hd-import-table-wrap{max-width:100%;overflow:auto;border:1px solid rgba(128,128,128,.2);border-radius:10px}
+.hd-import-table-wrap table{border-collapse:collapse;min-width:520px;width:100%;font-size:12px}
+.hd-import-table-wrap th,.hd-import-table-wrap td{padding:8px 10px;border-bottom:1px solid rgba(128,128,128,.16);text-align:left;white-space:nowrap}
+.hd-import-table-wrap th{background:rgba(128,128,128,.08)}
+.hd-import-list{display:grid;gap:8px}
+.hd-import-list>div{display:grid;gap:4px;padding:10px 12px;border-radius:10px;background:rgba(128,128,128,.08)}
+.hd-import-list span{color:#888;font-size:12px}
