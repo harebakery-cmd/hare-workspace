@@ -175,3 +175,31 @@ html[data-theme="dark"] .hd-inner-nav button[aria-current="page"],.dark .hd-inne
 
 #view-menu-admin .hd-board-main label,
 #view-menu-admin .hd-custom-row label{font-size:14px}
+
+/* Integrated work apps */
+.hd-app-menu-group{margin-top:12px;padding-top:10px;border-top:1px solid rgba(128,128,128,.18)}
+.hd-app-menu-caption{padding:0 16px 5px;color:#888;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.hd-app-menu-button{display:flex;width:100%;align-items:center;gap:12px;padding:10px 16px;border:0;border-radius:12px;background:transparent;color:inherit;text-align:left;font:inherit;font-size:14px;cursor:pointer;transition:background .15s ease}
+.hd-app-menu-button:hover,.hd-app-menu-button:focus-visible{background:rgba(128,128,128,.12);outline:none}
+.hd-module-setting{display:grid;gap:12px;padding:16px 0;border-top:1px solid rgba(128,128,128,.18)}
+.hd-module-setting-head{display:grid;grid-template-columns:minmax(160px,1fr) minmax(160px,220px) max-content;align-items:center;gap:16px}
+.hd-module-setting-head>div{display:grid;gap:4px}.hd-module-setting-head small{color:#858585;font-size:12px}
+.hd-module-setting-head label,.hd-module-field{display:grid;gap:6px;font-size:13px}
+.hd-module-setting-head label:last-child{display:flex;align-items:center;gap:7px}
+.hd-module-setting select,.hd-module-field input,.hd-module-field textarea{box-sizing:border-box;width:100%;max-width:100%;border:1px solid rgba(120,120,120,.28);border-radius:9px;padding:9px 10px;background:transparent;color:inherit;font:inherit}
+.hd-module-field textarea{resize:vertical;min-height:74px}
+.hd-module-setting .hd-module-field{max-width:720px}
+.hd-app-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:clamp(8px,2vw,24px);background:rgba(18,20,18,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hd-app-dialog{display:grid;grid-template-rows:auto minmax(0,1fr);width:min(1600px,100%);height:min(calc(100dvh - 32px),1000px);overflow:hidden;border:1px solid rgba(255,255,255,.25);border-radius:18px;background:#f6f7f4;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.hd-app-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(128,128,128,.2);color:#282a27}
+.hd-app-toolbar button{border:0;border-radius:9px;padding:8px 13px;background:#e8eae5;color:#252722;font:inherit;cursor:pointer}
+.hd-app-frame{width:100%;height:100%;border:0;background:#fff}
+@media(max-width:640px){
+ .hd-module-setting-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+ .hd-module-setting-head>div{grid-column:1/-1}
+ .hd-module-setting-head label:last-child{grid-column:1/-1}
+ .hd-app-overlay{padding:0}
+ .hd-app-dialog{width:100%;height:100dvh;border:0;border-radius:0}
+ .hd-app-toolbar{padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+}
+@media(prefers-reduced-motion:reduce){.hd-app-menu-button{transition:none}}
