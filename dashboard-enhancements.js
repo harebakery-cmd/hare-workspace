@@ -106,7 +106,7 @@
  const kstToday = () => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(value+'T00:00:00Z').valueOf()) && new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
  const labelDate = value => value.replaceAll('-','.');
- let navigate = null, selected = kstToday(), month = selected.slice(0,7), events = {}, config = null, configRaw = null, moduleConfig = {}, moduleConfigRaw = null, readError = '', menuError = '', editEvent = '', subscribed = false;
+ let navigate = null, selected = kstToday(), month = selected.slice(0,7), events = {}, config = null, configRaw = null, moduleConfig = {}, moduleConfigRaw = null, historyImports = {}, pendingImport = null, readError = '', menuError = '', editEvent = '', subscribed = false;
  function boards(){
   const saved = Array.isArray(config?.boards) ? config.boards : [];
   const byId = new Map(saved.filter(row => builtinIds.has(row?.id)).map(row => [row.id,row]));
@@ -144,12 +144,74 @@
   layer.addEventListener('click',event=>{if(event.target===layer)closeModule();});
   document.body.append(layer);
  }
+
+ function csvRows(text){
+  const rows=[];let row=[],cell='',quoted=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];if(quoted){if(ch==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(ch==='"')quoted=false;else cell+=ch;}else if(ch==='"')quoted=true;else if(ch===','){row.push(cell);cell='';}else if(ch==='\\n'){row.push(cell.replace(/\\r$/,''));rows.push(row);row=[];cell='';}else cell+=ch;}
+  if(cell||row.length){row.push(cell.replace(/\\r$/,''));rows.push(row);}return rows;
+ }
+ async function readZipEntry(bytes,name){
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let eocd=-1;
+  for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--){if(view.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+  if(eocd<0)throw Error('정상적인 .xlsx 파일이 아닙니다.');
+  const entries=view.getUint16(eocd+10,true),start=view.getUint32(eocd+16,true);let offset=start;
+  for(let i=0;i<entries;i++){
+   if(view.getUint32(offset,true)!==0x02014b50)throw Error('Excel 압축 구조를 읽을 수 없습니다.');
+   const method=view.getUint16(offset+10,true),size=view.getUint32(offset+20,true),nameLen=view.getUint16(offset+28,true),extraLen=view.getUint16(offset+30,true),commentLen=view.getUint16(offset+32,true),local=view.getUint32(offset+42,true);
+   const entryName=new TextDecoder().decode(bytes.slice(offset+46,offset+46+nameLen));
+   if(entryName===name){
+    const localName=view.getUint16(local+26,true),localExtra=view.getUint16(local+28,true),begin=local+30+localName+localExtra,compressed=bytes.slice(begin,begin+size);
+    if(method===0)return new TextDecoder().decode(compressed);
+    if(method===8){if(!('DecompressionStream'in window))throw Error('이 브라우저에서는 .xlsx 압축을 풀 수 없습니다. CSV로 저장해 업로드해주세요.');const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));return await new Response(stream).text();}
+    throw Error('지원하지 않는 Excel 압축 형식입니다.');
+   }
+   offset+=46+nameLen+extraLen+commentLen;
+  }
+  return null;
+ }
+ async function xlsxRows(file){
+  const bytes=new Uint8Array(await file.arrayBuffer()),sheet=await readZipEntry(bytes,'xl/worksheets/sheet1.xml');
+  if(!sheet)throw Error('첫 번째 시트를 찾을 수 없습니다.');
+  const sharedXml=await readZipEntry(bytes,'xl/sharedStrings.xml'),shared=[];
+  if(sharedXml){const doc=new DOMParser().parseFromString(sharedXml,'application/xml');for(const item of doc.getElementsByTagName('si'))shared.push([...item.getElementsByTagName('t')].map(x=>x.textContent||'').join(''));}
+  const xml=new DOMParser().parseFromString(sheet,'application/xml');if(xml.querySelector('parsererror'))throw Error('Excel 시트를 읽을 수 없습니다.');
+  const rows=[];
+  for(const row of xml.getElementsByTagName('row')){const cells=[];for(const cell of row.getElementsByTagName('c')){
+    const ref=cell.getAttribute('r')||'',letters=(ref.match(/^[A-Z]+/)||['A'])[0];let col=0;for(const ch of letters)col=col*26+ch.charCodeAt(0)-64;col--;
+    const v=cell.getElementsByTagName('v')[0]?.textContent||'',type=cell.getAttribute('t');let value=type==='s'?(shared[Number(v)]??''):type==='inlineStr'?[...cell.getElementsByTagName('t')].map(x=>x.textContent||'').join(''):v;
+    cells[col]=value;
+   }rows.push(cells.map(x=>x??''));}
+  return rows;
+ }
+ async function parseImportFile(file){
+  if(!file||file.size>5*1024*1024)throw Error('파일을 선택해주세요. 파일은 5MB 이하로 업로드할 수 있습니다.');
+  const ext=file.name.toLowerCase().split('.').pop();let raw;
+  if(ext==='csv')raw=csvRows(new TextDecoder('utf-8').decode(await file.arrayBuffer()).replace(/^\\uFEFF/,''));
+  else if(ext==='xlsx')raw=await xlsxRows(file);
+  else throw Error('.xlsx 또는 CSV 파일을 선택해주세요. 오래된 .xls 파일은 .xlsx로 다시 저장해주세요.');
+  const source=raw.filter(row=>row.some(cell=>String(cell??'').trim()!==''));
+  if(source.length<2)throw Error('제목 행과 데이터 행이 있는 파일을 선택해주세요.');
+  const headers=source[0].map((x,i)=>String(x||'항목 '+(i+1)).trim().slice(0,100));
+  const rows=source.slice(1).map(row=>Object.fromEntries(headers.map((key,i)=>[key,String(row[i]??'').trim()])));
+  if(rows.length>5000||headers.length>80)throw Error('한 번에 최대 5,000행, 80개 열까지 업로드할 수 있습니다.');
+  return {headers,rows};
+ }
+ function importPreviewHtml(){
+  if(!pendingImport)return '';
+  const preview=pendingImport.rows.slice(0,5),headers=pendingImport.headers;
+  return '<div class="hd-import-preview"><p><strong>'+esc(pendingImport.filename)+'</strong> · '+pendingImport.rows.length.toLocaleString('ko-KR')+'행 · '+headers.length+'개 항목</p><div class="hd-import-table-wrap"><table><thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+preview.map(row=>'<tr>'+headers.map(h=>'<td>'+esc(row[h])+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><p class="hd-muted">미리보기는 처음 5행입니다. 업로드한 기록은 운영 중인 현재 데이터와 분리해 보관합니다.</p><button type="button" class="hd-primary" data-hd-import-save>이전 기록 보관</button></div>';
+ }
+ function savedImportsHtml(){
+  const rows=Object.entries(historyImports||{}).map(([id,row])=>({id,...row})).sort((a,b)=>(b.uploadedAt||0)-(a.uploadedAt||0)).slice(0,20);
+  if(!rows.length)return '<p class="hd-muted">보관된 이전 기록이 없습니다.</p>';
+  return '<div class="hd-import-list">'+rows.map(row=>'<div><strong>'+esc(row.filename||'Excel 기록')+'</strong><span>'+esc(modules().find(x=>x.id===row.moduleId)?.label||row.moduleId||'업무')+' · '+Number(row.rowCount||0).toLocaleString('ko-KR')+'행 · '+esc(row.uploadedAt?new Date(row.uploadedAt).toLocaleString('ko-KR'):'')+'</span></div>').join('')+'</div>';
+ }
  function moduleSettingsMarkup(){
   const host=$('hd-module-settings');if(!host)return;
   if(!root()){host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">이 설정은 최고관리자 전용입니다.</p>';return;}
   if(!moduleConfigRaw){host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">Firebase 업무 설정을 불러오는 중입니다.</p>';return;}
   const accessOptions=(value)=>[['staff','로그인 직원'],['manager','직급자 이상'],['admin','관리자 이상'],['super','최고관리자만']].map(([id,label])=>'<option value="'+id+'" '+(value===id?'selected':'')+'>'+label+'</option>').join('');
-  host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">내부 앱은 포털 안에서 열고, 외부 서비스는 새 탭에서 엽니다. 앱별 품목과 화면 표시 항목을 먼저 등록할 수 있습니다.</p>'+modules().map(row=>'<article class="hd-module-setting" data-hd-module-row="'+row.id+'"><div class="hd-module-setting-head"><div><strong>'+esc(row.label)+'</strong><small>'+ (row.mode==='internal'?'포털 내부':'외부 새 탭')+' · '+esc(row.category)+'</small></div><label>접근 등급<select data-hd-module-access>'+accessOptions(row.access)+'</select></label><label><input type="checkbox" data-hd-module-visible '+(row.visible!==false?'checked':'')+'> 메뉴 표시</label></div>'+(row.mode==='internal'?'<label class="hd-module-field">관리 품목 (한 줄에 하나씩)<textarea data-hd-module-items rows="3" placeholder="예: 소금빵\n명장단팥빵">'+esc((row.items||[]).join('\n'))+'</textarea></label><label class="hd-module-field">화면 표시 항목 (쉼표로 구분)<input data-hd-module-fields value="'+esc((row.fields||[]).join(', '))+'" placeholder="예: 품목, 수량, 매장"></label>':'')+'</article>').join('')+'<button type="button" class="hd-primary hd-save" data-hd-modules-save>업무 설정 저장</button><p id="hd-module-status" role="status"></p>';
+  host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">내부 앱은 포털 안에서 열고, 외부 서비스는 새 탭에서 엽니다. 앱별 품목과 화면 표시 항목을 먼저 등록할 수 있습니다.</p>'+modules().map(row=>'<article class="hd-module-setting" data-hd-module-row="'+row.id+'"><div class="hd-module-setting-head"><div><strong>'+esc(row.label)+'</strong><small>'+ (row.mode==='internal'?'포털 내부':'외부 새 탭')+' · '+esc(row.category)+'</small></div><label>접근 등급<select data-hd-module-access>'+accessOptions(row.access)+'</select></label><label><input type="checkbox" data-hd-module-visible '+(row.visible!==false?'checked':'')+'> 메뉴 표시</label></div>'+(row.mode==='internal'?'<label class="hd-module-field">관리 품목 (한 줄에 하나씩)<textarea data-hd-module-items rows="3" placeholder="예: 소금빵\n명장단팥빵">'+esc((row.items||[]).join('\n'))+'</textarea></label><label class="hd-module-field">화면 표시 항목 (쉼표로 구분)<input data-hd-module-fields value="'+esc((row.fields||[]).join(', '))+'" placeholder="예: 품목, 수량, 매장"></label>':'')+'</article>').join('')+'<button type="button" class="hd-primary hd-save" data-hd-modules-save>업무 설정 저장</button><p id="hd-module-status" role="status"></p><div class="hd-import-panel"><h4>이전 기록 Excel 업로드</h4><p class="hd-muted">운영 데이터와 분리해 이전 기록으로 보관합니다. .xlsx 또는 Excel에서 저장한 .csv를 지원합니다.</p><label>업무<select id="hd-import-module">'+modules().map(x=>'<option value="'+x.id+'">'+esc(x.label)+'</option>').join('')+'</select></label><div class="hd-import-controls"><input type="file" id="hd-import-file" accept=".xlsx,.csv"><button type="button" data-hd-import-preview>파일 미리보기</button></div>\${importPreviewHtml()}<h4>최근 보관 기록</h4>\${savedImportsHtml()}</div>';
  }
  function saveModuleSettings(){
   if(!root())throw Error('최고관리자 계정으로 로그인해주세요.');
@@ -302,9 +364,10 @@
   db().ref(base+'calendarEvents').on('value',snap=>{events=snap.val()||{};readError='';renderDashboard();calendarView();},err=>{readError='일정 읽기 실패: '+err.message;calendarView();});
   db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
   db().ref(base+'moduleConfig').on('value',snap=>{moduleConfigRaw=snap.exists()?snap.val():{};moduleConfig=moduleConfigRaw||{};localStorage.setItem('harePortalModuleConfig',JSON.stringify(moduleConfig));applyMenu();moduleSettingsMarkup();},err=>{moduleConfigRaw=null;moduleConfig={};const status=$('hd-module-settings');if(status)status.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-error">업무 설정을 읽지 못했습니다. Firebase Rules에 moduleConfig 읽기 규칙이 있는지 확인해주세요.</p>';});
+  db().ref(base+'historyImports').on('value',snap=>{historyImports=snap.val()||{};moduleSettingsMarkup();},err=>{const status=$('hd-module-status');if(status)status.textContent='이전 기록 목록을 읽지 못했습니다. Firebase Rules를 확인해주세요.';});
  }
  document.addEventListener('click',async event=>{
-  const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-inner],[data-hd-move],[data-hd-move-section],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save],[data-hd-module],[data-hd-module-close],[data-hd-modules-save]');
+  const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-inner],[data-hd-move],[data-hd-move-section],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save],[data-hd-module],[data-hd-module-close],[data-hd-modules-save],[data-hd-import-preview],[data-hd-import-save]');
   if(!btn)return;
   try{
    if(btn.dataset.hdDate){selected=btn.dataset.hdDate;month=selected.slice(0,7);renderDashboard();if(!btn.closest('#view-calendar'))navigate?.('view-calendar');else calendarView();return;}
@@ -320,6 +383,17 @@
    if(btn.dataset.hdModule){openModule(btn.dataset.hdModule);return;}
    if(btn.hasAttribute('data-hd-module-close')){closeModule();return;}
    if(btn.hasAttribute('data-hd-modules-save')){btn.disabled=true;const status=$('hd-module-status');try{const result=await saveModuleSettings();if(!result.committed)throw Error('저장되지 않았습니다. 설정을 새로고침한 뒤 다시 시도해주세요.');if(status)status.textContent='업무 메뉴와 품목 설정을 저장했습니다.';}catch(err){if(status)status.textContent='저장 실패: '+err.message;else throw err;}finally{btn.disabled=false;}return;}
+   if(btn.hasAttribute('data-hd-import-preview')){
+    if(!root())throw Error('최고관리자 로그인이 필요합니다.');
+    const file=$('hd-import-file')?.files?.[0],moduleId=$('hd-import-module')?.value,status=$('hd-module-status');btn.disabled=true;
+    try{const parsed=await parseImportFile(file);pendingImport={...parsed,moduleId,filename:file.name};moduleSettingsMarkup();}catch(err){if(status)status.textContent='Excel 읽기 실패: '+err.message;}finally{btn.disabled=false;}return;
+   }
+   if(btn.hasAttribute('data-hd-import-save')){
+    if(!root()||!pendingImport)throw Error('최고관리자 계정과 미리보기 파일을 확인해주세요.');
+    const status=$('hd-module-status');btn.disabled=true;
+    try{if(!db())throw Error('Firebase 연결을 확인해주세요.');const ref=db().ref(base+'historyImports').push();await ref.set({moduleId:pendingImport.moduleId,filename:pendingImport.filename,headers:pendingImport.headers,rows:pendingImport.rows,rowCount:pendingImport.rows.length,uploadedAt:Date.now(),uploadedBy:window.HareAdmin?.currentAccount?.()?.id||'hare01'});pendingImport=null;if(status)status.textContent='이전 기록을 저장했습니다.';}catch(err){if(status)status.textContent='업로드 실패: '+err.message;}finally{btn.disabled=false;}return;
+   }
+
    if(btn.dataset.hdInner){openSection(btn.dataset.hdInnerBoard,btn.dataset.hdInner);return;}
    if(!menuManager())throw Error('Firebase 인증이 연결된 관리자 로그인이 필요합니다.');
    if(btn.dataset.hdMove){const row=btn.closest('[data-hd-board]'),next=Number(btn.dataset.hdMove)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMove)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
