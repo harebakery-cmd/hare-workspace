@@ -235,7 +235,7 @@
 
  function applyMenu(){
   const legacyShowcard=document.querySelector('[data-target="view-showcard"]');if(legacyShowcard){legacyShowcard.hidden=true;legacyShowcard.style.display='none';}
-  document.querySelectorAll('a[href="https://harebakery-cmd.github.io/hare-allergen/"]').forEach(link=>link.remove());
+  document.querySelectorAll('a[href="https://harebakery-cmd.github.io/hare-allergen/"],a[href="https://harehare-member.avionenpapier1.chatgpt.site/manage"]').forEach(link=>link.remove());
   for(const group of ['today','resources']){
    const host=document.querySelector(`[data-menu-group="${group}"]`);
    if(!host)continue;
