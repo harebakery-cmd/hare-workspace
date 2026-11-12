@@ -140,7 +140,7 @@
   if(row.mode==='external'){window.open(url,'_blank','noopener,noreferrer');return;}
   closeModule();
   const layer=document.createElement('div');layer.className='hd-app-overlay';layer.innerHTML='<div class="hd-app-dialog" role="dialog" aria-modal="true" aria-label="'+esc(row.label)+'"><header class="hd-app-toolbar"><strong>'+esc(row.label)+'</strong><button type="button" data-hd-module-close aria-label="업무 화면 닫기">닫기</button></header><iframe class="hd-app-frame" title="'+esc(row.label)+'" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
-  layer.querySelector('iframe').src=url;
+  const frame=layer.querySelector('iframe');frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'hare-workspace:module-config',moduleId:id,settings:window.HareWorkspace?.getModuleSettings(id)||null},location.origin));frame.src=url;
   layer.addEventListener('click',event=>{if(event.target===layer)closeModule();});
   document.body.append(layer);
  }
@@ -160,6 +160,7 @@
    const method=view.getUint16(offset+10,true),size=view.getUint32(offset+20,true),nameLen=view.getUint16(offset+28,true),extraLen=view.getUint16(offset+30,true),commentLen=view.getUint16(offset+32,true),local=view.getUint32(offset+42,true);
    const entryName=new TextDecoder().decode(bytes.slice(offset+46,offset+46+nameLen));
    if(entryName===name){
+    if(size>20*1024*1024)throw Error('압축 해제된 Excel 시트가 너무 큽니다. 20MB 이하로 나눠 업로드해주세요.');
     const localName=view.getUint16(local+26,true),localExtra=view.getUint16(local+28,true),begin=local+30+localName+localExtra,compressed=bytes.slice(begin,begin+size);
     if(method===0)return new TextDecoder().decode(compressed);
     if(method===8){if(!('DecompressionStream'in window))throw Error('이 브라우저에서는 .xlsx 압축을 풀 수 없습니다. CSV로 저장해 업로드해주세요.');const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));return await new Response(stream).text();}
@@ -194,6 +195,7 @@
   const headers=source[0].map((x,i)=>String(x||'항목 '+(i+1)).trim().slice(0,100));
   const rows=source.slice(1).map(row=>Object.fromEntries(headers.map((key,i)=>[key,String(row[i]??'').trim()])));
   if(rows.length>5000||headers.length>80)throw Error('한 번에 최대 5,000행, 80개 열까지 업로드할 수 있습니다.');
+  if(JSON.stringify(rows).length>3*1024*1024)throw Error('업로드한 표 데이터는 3MB 이하로 나눠주세요.');
   return {headers,rows};
  }
  function importPreviewHtml(){
