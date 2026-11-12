@@ -158,12 +158,13 @@
   }
   normalizeSidebarIcons();
  }
- let moduleScreenTitle='';
+ let moduleScreenTitle='',moduleNavCloseBound=false;
  function ensureModuleScreenStyles(){
   if($('hd-app-screen-style'))return;
   const style=document.createElement('style');style.id='hd-app-screen-style';
   style.textContent='#scroll-container{position:relative;isolation:isolate}.hd-app-overlay{position:absolute;z-index:40;inset:0;display:flex;flex-direction:column;overflow:auto;padding:clamp(12px,2.5vw,32px);background:var(--surface,rgba(255,255,255,.94))}.hd-app-dialog{display:flex;flex:1;flex-direction:column;gap:14px;width:100%;max-width:1440px;min-height:100%;margin:0 auto}.hd-app-toolbar{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 12px;border-bottom:1px solid var(--edge,rgba(0,0,0,.14));color:var(--ink,#222)}.hd-app-toolbar strong{font-size:clamp(18px,2vw,24px)}.hd-app-toolbar button{border:1px solid var(--edge,rgba(0,0,0,.2));border-radius:999px;padding:8px 16px;background:transparent;color:inherit}.hd-app-frame{display:block;width:100%;height:calc(100dvh - 210px);min-height:500px;flex:1;border:1px solid var(--edge,rgba(0,0,0,.14));border-radius:18px;background:#fff}@media(max-width:640px){.hd-app-overlay{padding:12px 10px 18px}.hd-app-frame{height:calc(100dvh - 165px);min-height:60dvh;border-radius:12px}}.hd-menu-icon{display:inline-block!important;width:7px!important;height:7px!important;min-width:7px!important;flex:0 0 7px!important;border-radius:2px!important;background:#c5c7cb!important;margin-right:0!important}.hd-app-menu-group{margin-top:18px}.hd-app-menu-caption{padding:0 16px;margin-bottom:8px;color:#777;font-size:11px;font-weight:700;letter-spacing:.12em}.hd-app-menu-button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 16px;border:0;border-radius:12px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.hd-app-menu-button:hover{background:rgba(0,0,0,.05)}.hd-menu-external{margin-left:auto;color:var(--muted,#777)}';
   document.head.append(style);
+  if(!moduleNavCloseBound){document.addEventListener('click',event=>{if(event.target.closest('#sidebar .nav-btn'))closeModule();},true);moduleNavCloseBound=true;}
  }
  function closeModule(){
   document.querySelector('.hd-app-overlay')?.remove();
@@ -180,8 +181,6 @@
   const layer=document.createElement('section');layer.className='hd-app-overlay';layer.setAttribute('aria-label',row.label+' 업무 화면');
   layer.innerHTML='<div class="hd-app-dialog" role="region" aria-label="'+esc(row.label)+'"><header class="hd-app-toolbar"><strong>'+esc(row.label)+'</strong><button type="button" data-hd-module-close aria-label="업무 화면 닫기">닫기</button></header><iframe class="hd-app-frame" title="'+esc(row.label)+'" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
   const frame=layer.querySelector('iframe');frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'hare-workspace:module-config',moduleId:id,settings:window.HareWorkspace?.getModuleSettings(id)||null,history:window.HareWorkspace?.getHistoryImports(id)||[]},location.origin));frame.src=url;
-  layer.addEventListener('click',event=>{if(event.target===layer)closeModule();});
-  document.addEventListener('click',function closeOnNav(event){if(event.target.closest('#sidebar .nav-btn')){closeModule();document.removeEventListener('click',closeOnNav,true);}},true);
   const container=$('scroll-container')||document.body;container.append(layer);
  }
 
