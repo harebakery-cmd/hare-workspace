@@ -15,7 +15,7 @@
  const moduleDefaults = [
   {id:'showcard',label:'쇼카드',category:'디자인',mode:'internal',url:'https://harebakery-cmd.github.io/showcard/',access:'super',visible:true,items:[],fields:[]},
   {id:'allergen',label:'알레르기 정보',category:'상품·안전',mode:'internal',url:'https://harebakery-cmd.github.io/hare-allergen/',access:'staff',visible:true,items:[],fields:[]},
-  {id:'cake-menu',label:'케이크 메뉴',category:'상품·안전',mode:'internal',url:'https://harebakery-cmd.github.io/cake-menu/',access:'super',visible:true,items:[],fields:[]},
+  {id:'cake-menu',label:'케이크 메뉴',category:'디자인',mode:'internal',url:'https://harebakery-cmd.github.io/cake-menu/',access:'super',visible:true,items:[],fields:[]},
   {id:'hare-order',label:'하레 발주',category:'발주',mode:'internal',url:'https://harebakery-cmd.github.io/hare-order/',access:'staff',visible:true,items:[],fields:[]},
   {id:'hare-new',label:'신제품 등록',category:'상품·안전',mode:'internal',url:'https://harebakery-cmd.github.io/hare-new/',access:'staff',visible:true,items:[],fields:[]},
   {id:'bread-order',label:'빵 발주',category:'발주',mode:'internal',url:'https://harebakery-cmd.github.io/bread-order/',access:'staff',visible:true,items:[],fields:[]},
@@ -31,12 +31,13 @@
  const sectionMap = {
   'view-calendar': [['calendar','달력'],['agenda','선택 날짜 일정']],
   'view-bulletin': [['list','공지 목록'],['compose','공지 작성']],
-  'view-newprod': [['register','신제품 등록'],['list','등록된 신제품']],
+  'view-newprod': [['register','신제품 등록'],['list','등록된 신제품'],['app:allergen','알레르기 정보'],['app:hare-new','신제품 관리 앱']],
   'view-recipe': [['list','배합표 게시판'],['register','배합표 등록']],
   'view-origin': [['products','제품 선택'],['edit','원산지 정보'],['queue','원라벨 목록']]
  };
  const orderStores = (() => {try{return JSON.parse($('unified-catalog')?.textContent||'{}').stores||[];}catch{return [];}})();
- sectionMap['view-order'] = [['all','전체 발주'],...orderStores.map(x=>['store:'+x.id,x.name])];
+ sectionMap['view-order'] = [['all','전체 발주'],...orderStores.map(x=>['store:'+x.id,x.name]),['app:hare-order','하레 발주'],['app:bread-order','빵 발주'],['app:bread-order-dp','빵 발주 DP']];
+ const embeddedModuleIds = new Set(['allergen','hare-new','hare-order','bread-order','bread-order-dp']);
  const roleRank = {guest:0,staff:1,manager:2,admin:3,super:4};
  const accountRole = () => window.HareAdmin?.currentAccount?.()?.role || 'guest';
  function sections(boardId){
@@ -49,7 +50,8 @@
  }
  function canShowSection(row){
   const required=row.access==='all'?0:(roleRank[row.access]??0);
-  return row.visible!==false && (roleRank[accountRole()]??0)>=required;
+  const linked=row.id?.startsWith('app:')?modules().find(x=>x.id===row.id.slice(4)):null;
+  return row.visible!==false && (!linked||linked.visible!==false) && (roleRank[accountRole()]??0)>=required;
  }
  const sectionSelector = {
   'view-calendar': {calendar:'#hd-full-calendar',agenda:'#hd-agenda'},
@@ -63,7 +65,7 @@
   const host=$(boardId),items=sections(boardId).filter(canShowSection);
   if(!host||!host.classList.contains('active')||items.length<2){host?.querySelector('.hd-inner-nav')?.remove();return;}
   const pressed=boardId==='view-order'?host.querySelector('.u-store-tabs [aria-pressed="true"]')?.dataset.storeId:null;
-  const current=pressed!==null&&pressed!==undefined?(pressed?'store:'+pressed:'all'):selectedSection[boardId];
+  const current=selectedSection[boardId]?.startsWith('app:')?selectedSection[boardId]:(pressed!==null&&pressed!==undefined?(pressed?'store:'+pressed:'all'):selectedSection[boardId]);
   const selected=items.some(x=>x.id===current)?current:(items.find(x=>x.default)?.id||items[0].id);
   selectedSection[boardId]=selected;
   const html=`<span class="hd-inner-caption">내부 메뉴</span>${items.map(row=>`<button type="button" data-hd-inner="${esc(row.id)}" data-hd-inner-board="${boardId}" aria-current="${row.id===selected?'page':'false'}">${esc(row.label)}</button>`).join('')}`;
@@ -77,13 +79,14 @@
   const host=$(boardId);
   if(!host?.classList.contains('active')){if(!navigate?.(boardId))return;}
   selectedSection[boardId]=id;
-  if(boardId==='view-order'){
+  if(boardId==='view-order'&&!id.startsWith('app:')){
    const storeId=id==='all'?'':id.startsWith('store:')?id.slice(6):null;
    if(storeId!==null){const button=[...host.querySelectorAll('.u-store-tabs [data-store-id]')].find(x=>x.dataset.storeId===storeId);if(button?.getAttribute('aria-pressed')!=='true')button?.click();}
   }else if(boardId==='view-recipe'&&id==='register'&&!host.querySelector('.u-recipe-editor')){
    host.querySelector('[data-action="open-recipe-register"]')?.click();
   }
   innerMenu(boardId);
+  if(id.startsWith('app:')){openModule(id.slice(4));return;}
   const selector=sectionSelector[boardId]?.[id];
   const target=selector&&host.querySelector(selector);
   if(target)requestAnimationFrame(()=>target.scrollIntoView({behavior:'smooth',block:'start'}));
@@ -116,13 +119,13 @@
   });
  }
  function links(){return (Array.isArray(config?.links)?config.links:[]).filter(row=>row && /^https:\/\//i.test(row.url||'') && String(row.label||'').trim()).slice(0,30);}
- function modules(){const saved=Array.isArray(moduleConfig?.modules)?moduleConfig.modules:[];const byId=new Map(saved.filter(x=>moduleDefaults.some(d=>d.id===x?.id)).map(x=>[x.id,x]));return moduleDefaults.map(row=>({...row,...byId.get(row.id),id:row.id,mode:row.mode,url:row.url}));}
+ function modules(){const saved=Array.isArray(moduleConfig?.modules)?moduleConfig.modules:[];const byId=new Map(saved.filter(x=>moduleDefaults.some(d=>d.id===x?.id)).map(x=>[x.id,x]));return moduleDefaults.map(row=>({...row,...byId.get(row.id),id:row.id,mode:row.mode,url:row.url,category:row.id==='cake-menu'?'디자인':row.category}));}
  function canOpenModule(row){const role=accountRole();if(row.access==='super')return root();return (roleRank[role]??0)>=(moduleRank[row.access]??1);}
  function moduleURL(row){const url=new URL(row.url);if(row.mode==='internal'&&url.origin!==location.origin)throw Error('내부 업무 링크는 harebakery-cmd.github.io 안에서만 열 수 있습니다.');if(row.mode==='external'&&!['harehare-pop-studio.avionenpapier1.chatgpt.site','do-rim.github.io','harehare-member.avionenpapier1.chatgpt.site'].includes(url.hostname))throw Error('등록된 외부 링크 주소가 아닙니다.');return url.href;}
  function renderModuleMenu(){
   const host=document.querySelector('[data-menu-group="resources"]');if(!host)return;
   host.querySelectorAll('.hd-app-menu-group').forEach(x=>x.remove());
-  const rows=modules().filter(x=>x.visible!==false);
+  const rows=modules().filter(x=>x.visible!==false&&!embeddedModuleIds.has(x.id));
   for(const category of [...new Set(rows.map(x=>x.category||'업무 도구'))]){
    const group=document.createElement('div');group.className='hd-app-menu-group';group.innerHTML='<div class="hd-app-menu-caption">'+esc(category)+'</div>';
    rows.filter(x=>(x.category||'업무 도구')===category).forEach(row=>{
@@ -231,6 +234,8 @@
  }
 
  function applyMenu(){
+  const legacyShowcard=document.querySelector('[data-target="view-showcard"]');if(legacyShowcard){legacyShowcard.hidden=true;legacyShowcard.style.display='none';}
+  document.querySelectorAll('a[href="https://harebakery-cmd.github.io/hare-allergen/"]').forEach(link=>link.remove());
   for(const group of ['today','resources']){
    const host=document.querySelector(`[data-menu-group="${group}"]`);
    if(!host)continue;
