@@ -128,7 +128,7 @@
   sidebar.querySelectorAll('.nav-btn,#admin-category button,#sidebar a[href],#bread-order-menu summary').forEach(item=>{
    const icon=item.firstElementChild;
    if(icon&&(icon.tagName==='DIV'||(icon.tagName==='SPAN'&&icon.hasAttribute('aria-hidden')&&!icon.querySelector('svg')))){
-    icon.className='hd-menu-icon';icon.textContent='';icon.setAttribute('aria-hidden','true');
+    icon.className='hd-menu-icon';icon.textContent='';icon.setAttribute('aria-hidden','true');icon.style.cssText='display:inline-block;width:7px;height:7px;min-width:7px;flex:0 0 7px;border-radius:2px;background:#c5c7cb;margin:0';
    }
   });
  }
@@ -147,7 +147,7 @@
    const group=document.createElement('div');group.className='hd-app-menu-group';group.dataset.hdModuleCategory=category;group.innerHTML='<div class="hd-app-menu-caption">'+esc(category)+'</div>';
    categoryRows.forEach(row=>{
     const button=document.createElement('button');button.type='button';button.dataset.hdModule=row.id;button.className='hd-app-menu-button';
-    button.innerHTML='<span class="hd-menu-icon" aria-hidden="true"></span><span class="hd-menu-label">'+esc(row.label)+'</span>'+(row.mode==='external'?'<span class="hd-menu-external" aria-hidden="true">↗</span>':'');
+    button.innerHTML='<span class="hd-menu-icon" style="display:inline-block;width:7px;height:7px;min-width:7px;flex:0 0 7px;border-radius:2px;background:#c5c7cb;margin:0" aria-hidden="true"></span><span class="hd-menu-label">'+esc(row.label)+'</span>'+(row.mode==='external'?'<span class="hd-menu-external" aria-hidden="true">↗</span>':'');
     button.setAttribute('aria-label',row.label+(canOpenModule(row)?'':' · 권한 필요'));group.append(button);
    });
    if(category==='관리'&&adminCategory){
