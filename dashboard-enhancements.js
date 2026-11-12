@@ -124,14 +124,25 @@
  function moduleURL(row){const url=new URL(row.url);if(row.mode==='internal'&&url.origin!==location.origin)throw Error('내부 업무 링크는 harebakery-cmd.github.io 안에서만 열 수 있습니다.');if(row.mode==='external'&&!['harehare-pop-studio.avionenpapier1.chatgpt.site','do-rim.github.io','harehare-member.avionenpapier1.chatgpt.site'].includes(url.hostname))throw Error('등록된 외부 링크 주소가 아닙니다.');return url.href;}
  function renderModuleMenu(){
   const host=document.querySelector('[data-menu-group="resources"]');if(!host)return;
+  const adminCategory=document.getElementById('admin-category');
+  if(adminCategory&&host.contains(adminCategory))host.after(adminCategory);
   host.querySelectorAll('.hd-app-menu-group').forEach(x=>x.remove());
   const rows=modules().filter(x=>x.visible!==false&&!embeddedModuleIds.has(x.id));
-  for(const category of [...new Set(rows.map(x=>x.category||'업무 도구'))]){
-   const group=document.createElement('div');group.className='hd-app-menu-group';group.innerHTML='<div class="hd-app-menu-caption">'+esc(category)+'</div>';
-   rows.filter(x=>(x.category||'업무 도구')===category).forEach(row=>{
+  const categories=[...new Set(rows.map(x=>x.category||'업무 도구'))];
+  const adminToolsVisible=!!adminCategory&&!adminCategory.hidden&&adminCategory.dataset.accessHidden!=='true';
+  if(adminToolsVisible&&!categories.includes('관리'))categories.push('관리');
+  for(const category of categories){
+   const categoryRows=rows.filter(x=>(x.category||'업무 도구')===category);
+   if(category==='관리'&&!categoryRows.length&&!adminToolsVisible)continue;
+   const group=document.createElement('div');group.className='hd-app-menu-group';group.dataset.hdModuleCategory=category;group.innerHTML='<div class="hd-app-menu-caption">'+esc(category)+'</div>';
+   categoryRows.forEach(row=>{
     const button=document.createElement('button');button.type='button';button.dataset.hdModule=row.id;button.className='hd-app-menu-button';button.textContent=(row.mode==='external'?'↗  ':'▣  ')+row.label;
     button.setAttribute('aria-label',row.label+(canOpenModule(row)?'':' · 권한 필요'));group.append(button);
    });
+   if(category==='관리'&&adminCategory){
+    adminCategory.querySelector(':scope > p')?.remove();
+    group.append(adminCategory);
+   }
    host.append(group);
   }
  }
