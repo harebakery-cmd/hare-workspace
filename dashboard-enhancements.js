@@ -16,10 +16,10 @@
   {id:'showcard',label:'쇼카드',category:'디자인',mode:'internal',url:'https://harebakery-cmd.github.io/showcard/',access:'super',visible:true,items:[],fields:[]},
   {id:'allergen',label:'알레르기 정보',category:'상품·안전',mode:'internal',url:'https://harebakery-cmd.github.io/hare-allergen/',access:'staff',visible:true,items:[],fields:[]},
   {id:'cake-menu',label:'케이크 메뉴',category:'디자인',mode:'internal',url:'https://harebakery-cmd.github.io/cake-menu/',access:'super',visible:true,items:[],fields:[]},
-  {id:'hare-order',label:'하레 발주',category:'발주',mode:'internal',url:'https://harebakery-cmd.github.io/hare-order/',access:'staff',visible:true,items:[],fields:[]},
-  {id:'hare-new',label:'신제품 등록',category:'상품·안전',mode:'internal',url:'https://harebakery-cmd.github.io/hare-new/',access:'staff',visible:true,items:[],fields:[]},
-  {id:'bread-order',label:'빵 발주',category:'발주',mode:'internal',url:'https://harebakery-cmd.github.io/bread-order/',access:'staff',visible:true,items:[],fields:[]},
-  {id:'bread-order-dp',label:'빵 발주 · DP',category:'발주',mode:'internal',url:'https://harebakery-cmd.github.io/bread-order-dp/',access:'staff',visible:true,items:[],fields:[]},
+
+
+
+
   {id:'hare-manager',label:'직급자 관리',category:'관리',mode:'internal',url:'https://harebakery-cmd.github.io/hare-manager/',access:'manager',visible:true,items:[],fields:[]},
   {id:'pop-studio',label:'POP Studio',category:'디자인',mode:'external',url:'https://harehare-pop-studio.avionenpapier1.chatgpt.site/',access:'super',visible:true},
   {id:'request',label:'요청 관리',category:'관리',mode:'external',url:'https://do-rim.github.io/request/',access:'super',visible:true},
