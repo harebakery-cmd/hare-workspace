@@ -79,11 +79,6 @@
  function innerMenu(boardId){
   $(boardId)?.querySelector('.hd-inner-nav')?.remove();
  }
- function removeObsoleteFooter(){
-  document.querySelectorAll('p').forEach(node=>{
-   if(node.textContent?.includes('Realtime Database 보안 규칙을 게시하면 여러 기기에서 자료가 동기화됩니다.'))node.remove();
-  });
- }
  function openSection(boardId,id){
   const row=sections(boardId).find(x=>x.id===id);
   if(!row||!canShowSection(row))return;
@@ -327,7 +322,6 @@
  }
  let lastRenderedView='';
  function render(viewId){
-  removeObsoleteFooter();
   const entering=lastRenderedView!==viewId;lastRenderedView=viewId;
   if(viewId==='view-calendar')calendarView();
   if(viewId==='view-menu-admin')adminView();
@@ -416,7 +410,7 @@
  }
  function init(go){
   navigate=go;if(subscribed)return;subscribed=true;
-  renderDashboard();removeObsoleteFooter();
+  renderDashboard();
   if(!db()){readError='Firebase에 연결하지 못했습니다. 일정을 불러올 수 없습니다.';calendarView();return;}
   db().ref(base+'calendarEvents').on('value',snap=>{events=snap.val()||{};readError='';renderDashboard();calendarView();},err=>{readError='일정 읽기 실패: '+err.message;calendarView();});
   db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
