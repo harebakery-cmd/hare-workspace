@@ -14,7 +14,7 @@
 
  const moduleDefaults = [
   {id:'showcard',label:'쇼카드',category:'디자인',mode:'internal',url:'https://harebakery-cmd.github.io/showcard/',access:'super',visible:true,items:[],fields:[]},
-  {id:'allergen',label:'알레르기 정보',category:'상품·안전',mode:'internal',url:'https://harebakery-cmd.github.io/hare-allergen/',access:'staff',visible:true,items:[],fields:[]},
+
   {id:'cake-menu',label:'케이크 메뉴',category:'디자인',mode:'internal',url:'https://harebakery-cmd.github.io/cake-menu/',access:'super',visible:true,items:[],fields:[]},
 
 
@@ -290,7 +290,7 @@
 
  function applyMenu(){
   const legacyShowcard=document.querySelector('[data-target="view-showcard"]');if(legacyShowcard){legacyShowcard.hidden=true;legacyShowcard.style.display='none';}
-  document.querySelectorAll('a[href="https://harebakery-cmd.github.io/hare-allergen/"],a[href="https://harehare-member.avionenpapier1.chatgpt.site/manage"]').forEach(link=>link.remove());
+  document.querySelectorAll('a[href="https://harehare-member.avionenpapier1.chatgpt.site/manage"]').forEach(link=>link.remove());
   for(const group of ['today','resources']){
    const host=document.querySelector(`[data-menu-group="${group}"]`);
    if(!host)continue;
