@@ -31,15 +31,30 @@
  const sectionMap = {
   'view-calendar': [['calendar','달력'],['agenda','선택 날짜 일정']],
   'view-bulletin': [['list','공지 목록'],['compose','공지 작성']],
-  'view-newprod': [['register','신제품 등록'],['list','등록된 신제품'],['app:allergen','알레르기 정보'],['app:hare-new','신제품 관리 앱']],
+  'view-newprod': [['register','신제품 등록'],['list','등록된 신제품']],
   'view-recipe': [['list','배합표 게시판'],['register','배합표 등록']],
   'view-origin': [['products','제품 선택'],['edit','원산지 정보'],['queue','원라벨 목록']]
  };
  const orderStores = (() => {try{return JSON.parse($('unified-catalog')?.textContent||'{}').stores||[];}catch{return [];}})();
- sectionMap['view-order'] = [['all','전체 발주'],...orderStores.map(x=>['store:'+x.id,x.name]),['app:hare-order','하레 발주'],['app:bread-order','빵 발주'],['app:bread-order-dp','빵 발주 DP']];
- const embeddedModuleIds = new Set(['allergen','hare-new','hare-order','bread-order','bread-order-dp']);
+ sectionMap['view-order'] = [['all','전체 발주'],...orderStores.map(x=>['store:'+x.id,x.name])];
+ const embeddedModuleIds = new Set();
  const roleRank = {guest:0,staff:1,manager:2,admin:3,super:4};
  const accountRole = () => window.HareAdmin?.currentAccount?.()?.role || 'guest';
+ function moduleViewId(id){return 'view-module-'+id;}
+ function prepareModuleViews(){
+  const host=$('scroll-container');if(!host)return;
+  for(const row of moduleDefaults.filter(x=>x.mode==='internal')){
+   const id=moduleViewId(row.id);if($(id))continue;
+   const page=document.createElement('section');page.id=id;page.className='spa-page hd-module-page';page.dataset.hdModuleId=row.id;
+   page.innerHTML='<header class="hd-module-head"><div><span class="hd-module-kicker">WORKSPACE</span><h2>'+esc(row.label)+'</h2></div><button type="button" data-hd-module-close>← TODAY</button></header><iframe class="hd-module-frame" title="'+esc(row.label)+'" data-module-url="'+esc(row.url)+'" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+   host.append(page);
+  }
+  const original=window.HareAdmin?.canView;
+  if(original&&!original.__hareModuleRoutes){const canView=function(id){const match=String(id||'').match(/^view-module-(.+)$/);if(match){const row=modules().find(x=>x.id===match[1]);return !!row&&row.mode==='internal'&&canOpenModule(row);}return original(id);};canView.__hareModuleRoutes=true;window.HareAdmin.canView=canView;}
+  const observer=new MutationObserver(()=>{const active=host.querySelector('.spa-page.active[data-hd-module-id]');if(active){const row=modules().find(x=>x.id===active.dataset.hdModuleId);if(row&&$('page-title'))$('page-title').textContent=row.label;}});
+  observer.observe(host,{subtree:true,attributes:true,attributeFilter:['class']});
+ }
+ prepareModuleViews();
  function sections(boardId){
   const defaults=sectionMap[boardId]||[];
   const saved=boards().find(row=>row.id===boardId)?.sections||[];
@@ -163,26 +178,28 @@
  function ensureModuleScreenStyles(){
   if($('hd-app-screen-style'))return;
   const style=document.createElement('style');style.id='hd-app-screen-style';
-  style.textContent='#scroll-container{position:relative;isolation:isolate}.hd-app-overlay{position:absolute;z-index:40;inset:0;display:flex;flex-direction:column;overflow:auto;padding:clamp(12px,2.5vw,32px);background:var(--surface,rgba(255,255,255,.94))}.hd-app-dialog{display:flex;flex:1;flex-direction:column;gap:14px;width:100%;max-width:1440px;min-height:100%;margin:0 auto}.hd-app-toolbar{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 12px;border-bottom:1px solid var(--edge,rgba(0,0,0,.14));color:var(--ink,#222)}.hd-app-toolbar strong{font-size:clamp(18px,2vw,24px)}.hd-app-toolbar button{border:1px solid var(--edge,rgba(0,0,0,.2));border-radius:999px;padding:8px 16px;background:transparent;color:inherit}.hd-app-frame{display:block;width:100%;height:calc(100dvh - 210px);min-height:500px;flex:1;border:1px solid var(--edge,rgba(0,0,0,.14));border-radius:18px;background:#fff}@media(max-width:640px){.hd-app-overlay{padding:12px 10px 18px}.hd-app-frame{height:calc(100dvh - 165px);min-height:60dvh;border-radius:12px}}.hd-menu-icon{display:inline-block!important;width:7px!important;height:7px!important;min-width:7px!important;flex:0 0 7px!important;border-radius:2px!important;background:#c5c7cb!important;margin-right:0!important}.hd-app-menu-group{margin-top:18px}.hd-app-menu-caption{padding:0 16px;margin-bottom:8px;color:#777;font-size:11px;font-weight:700;letter-spacing:.12em}.hd-app-menu-button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 16px;border:0;border-radius:12px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.hd-app-menu-button:hover{background:rgba(0,0,0,.05)}.hd-menu-external{margin-left:auto;color:var(--muted,#777)}';
+  style.textContent='.hd-module-page{max-width:1440px;margin:0 auto}.hd-module-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 auto 18px}.hd-module-kicker{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--muted,#777)}.hd-module-head h2{margin:4px 0 0;font-size:clamp(22px,3vw,32px);font-weight:700}.hd-module-head button{border:1px solid var(--edge,rgba(0,0,0,.2));border-radius:999px;padding:8px 16px;background:transparent;color:inherit}.hd-module-frame{display:block;width:100%;height:calc(100dvh - 210px);min-height:500px;border:1px solid var(--edge,rgba(0,0,0,.14));border-radius:18px;background:#fff}@media(max-width:640px){.hd-module-head{margin-bottom:12px}.hd-module-frame{height:calc(100dvh - 165px);min-height:60dvh;border-radius:12px}}.hd-menu-icon{display:inline-block!important;width:7px!important;height:7px!important;min-width:7px!important;flex:0 0 7px!important;border-radius:2px!important;background:#c5c7cb!important;margin-right:0!important}.hd-app-menu-group{margin-top:18px}.hd-app-menu-caption{padding:0 16px;margin-bottom:8px;color:#777;font-size:11px;font-weight:700;letter-spacing:.12em}.hd-app-menu-button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 16px;border:0;border-radius:12px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.hd-app-menu-button:hover{background:rgba(0,0,0,.05)}.hd-menu-external{margin-left:auto;color:var(--muted,#777)}';
   document.head.append(style);
   if(!moduleNavCloseBound){document.addEventListener('click',event=>{if(event.target.closest('#sidebar .nav-btn'))closeModule();},true);moduleNavCloseBound=true;}
  }
  function closeModule(){
-  document.querySelector('.hd-app-overlay')?.remove();
-  const title=$('page-title');
-  if(title&&moduleScreenTitle){title.textContent=moduleScreenTitle;moduleScreenTitle='';}
+  const active=document.querySelector('.spa-page.active[data-hd-module-id]');
+  if(active)navigate?.('view-dashboard');
  }
  function openModule(id){
   const row=modules().find(x=>x.id===id);if(!row)return;
   if(!canOpenModule(row)){alert('이 업무 메뉴를 열 권한이 없습니다. 필요한 권한은 '+({staff:'로그인 직원',manager:'직급자',admin:'관리자',super:'최고관리자'}[row.access]||'로그인 사용자')+'입니다.');return;}
   const url=moduleURL(row);
   if(row.mode==='external'){window.open(url,'_blank','noopener,noreferrer');return;}
-  closeModule();ensureModuleScreenStyles();
-  const title=$('page-title');moduleScreenTitle=title?.textContent||'홈';if(title)title.textContent=row.label;
-  const layer=document.createElement('section');layer.className='hd-app-overlay';layer.setAttribute('aria-label',row.label+' 업무 화면');
-  layer.innerHTML='<div class="hd-app-dialog" role="region" aria-label="'+esc(row.label)+'"><header class="hd-app-toolbar"><strong>'+esc(row.label)+'</strong><button type="button" data-hd-module-close aria-label="업무 화면 닫기">닫기</button></header><iframe class="hd-app-frame" title="'+esc(row.label)+'" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
-  const frame=layer.querySelector('iframe');frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'hare-workspace:module-config',moduleId:id,settings:window.HareWorkspace?.getModuleSettings(id)||null,history:window.HareWorkspace?.getHistoryImports(id)||[]},location.origin));frame.src=url;
-  const container=$('scroll-container')||document.body;container.append(layer);
+  prepareModuleViews();
+  const viewId=moduleViewId(id),page=$(viewId),frame=page?.querySelector('iframe');
+  if(!page||!frame)return;
+  if(!navigate?.(viewId))return;
+  const title=$('page-title');if(title)title.textContent=row.label;
+  if(frame.dataset.loaded!=='true'){
+   frame.addEventListener('load',()=>frame.contentWindow?.postMessage({type:'hare-workspace:module-config',moduleId:id,settings:window.HareWorkspace?.getModuleSettings(id)||null,history:window.HareWorkspace?.getHistoryImports(id)||[]},location.origin));
+   frame.src=url;frame.dataset.loaded='true';
+  }
  }
 
  function csvRows(text){
@@ -420,7 +437,7 @@
   syncHistoryImports();
  }
  document.addEventListener('click',async event=>{
-  const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-inner],[data-hd-move],[data-hd-move-section],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save],[data-hd-module],[data-hd-module-close],[data-hd-modules-save],[data-hd-import-preview],[data-hd-import-save]');
+  const btn=event.target.closest('[data-hd-date],[data-hd-month],[data-hd-today],[data-hd-open],[data-hd-notice],[data-hd-new],[data-hd-edit],[data-hd-delete],[data-hd-cancel],[data-hd-open-board],[data-hd-inner],[data-hd-move],[data-hd-move-section],[data-hd-move-link],[data-hd-add-link],[data-hd-remove-link],[data-hd-save],[data-hd-module],[data-hd-module-close],[data-hd-module-back],[data-hd-modules-save],[data-hd-import-preview],[data-hd-import-save]');
   if(!btn)return;
   try{
    if(btn.dataset.hdDate){selected=btn.dataset.hdDate;month=selected.slice(0,7);renderDashboard();if(!btn.closest('#view-calendar'))navigate?.('view-calendar');else calendarView();return;}
@@ -434,7 +451,7 @@
    if(btn.hasAttribute('data-hd-cancel')){editEvent='';$('hd-editor').innerHTML='';return;}
    if(btn.dataset.hdOpenBoard){navigate?.(btn.dataset.hdOpenBoard);return;}
    if(btn.dataset.hdModule){openModule(btn.dataset.hdModule);return;}
-   if(btn.hasAttribute('data-hd-module-close')){closeModule();return;}
+   if(btn.hasAttribute('data-hd-module-close')||btn.hasAttribute('data-hd-module-back')){closeModule();return;}
    if(btn.hasAttribute('data-hd-modules-save')){btn.disabled=true;const status=$('hd-module-status');try{const result=await saveModuleSettings();if(!result.committed)throw Error('저장되지 않았습니다. 설정을 새로고침한 뒤 다시 시도해주세요.');if(status)status.textContent='업무 메뉴와 품목 설정을 저장했습니다.';}catch(err){if(status)status.textContent='저장 실패: '+err.message;else throw err;}finally{btn.disabled=false;}return;}
    if(btn.hasAttribute('data-hd-import-preview')){
     if(!root())throw Error('최고관리자 로그인이 필요합니다.');
