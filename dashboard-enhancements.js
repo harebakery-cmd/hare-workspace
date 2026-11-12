@@ -77,16 +77,12 @@
  };
  const selectedSection={};
  function innerMenu(boardId){
-  const host=$(boardId),items=sections(boardId).filter(canShowSection);
-  if(!host||!host.classList.contains('active')||items.length<2){host?.querySelector('.hd-inner-nav')?.remove();return;}
-  const pressed=boardId==='view-order'?host.querySelector('.u-store-tabs [aria-pressed="true"]')?.dataset.storeId:null;
-  const current=selectedSection[boardId]?.startsWith('app:')?selectedSection[boardId]:(pressed!==null&&pressed!==undefined?(pressed?'store:'+pressed:'all'):selectedSection[boardId]);
-  const selected=items.some(x=>x.id===current)?current:(items.find(x=>x.default)?.id||items[0].id);
-  selectedSection[boardId]=selected;
-  const html=`<span class="hd-inner-caption">내부 메뉴</span>${items.map(row=>`<button type="button" data-hd-inner="${esc(row.id)}" data-hd-inner-board="${boardId}" aria-current="${row.id===selected?'page':'false'}">${esc(row.label)}</button>`).join('')}`;
-  let nav=host.querySelector(':scope > .hd-inner-nav');
-  if(!nav){nav=document.createElement('nav');nav.className='hd-inner-nav';nav.setAttribute('aria-label','게시판 내부 메뉴');const heading=host.querySelector(':scope > .u-heading, :scope > .hd-page-head');if(heading)heading.after(nav);else host.prepend(nav);}
-  if(nav.dataset.markup!==html){nav.innerHTML=html;nav.dataset.markup=html;}
+  $(boardId)?.querySelector('.hd-inner-nav')?.remove();
+ }
+ function removeObsoleteFooter(){
+  document.querySelectorAll('p').forEach(node=>{
+   if(node.textContent?.includes('Realtime Database 보안 규칙을 게시하면 여러 기기에서 자료가 동기화됩니다.'))node.remove();
+  });
  }
  function openSection(boardId,id){
   const row=sections(boardId).find(x=>x.id===id);
@@ -106,17 +102,6 @@
   const target=selector&&host.querySelector(selector);
   if(target)requestAnimationFrame(()=>target.scrollIntoView({behavior:'smooth',block:'start'}));
  }
- let menuObserver=null,menuScheduled=false;
- function watchInnerMenus(){
-  if(menuObserver)return;
-  menuObserver=new MutationObserver(records=>{
-   if(records.every(record=>record.target.closest?.('.hd-inner-nav')))return;
-   if(menuScheduled)return;menuScheduled=true;
-   queueMicrotask(()=>{menuScheduled=false;const page=document.querySelector('.spa-page.active');if(page&&sectionMap[page.id])innerMenu(page.id);});
-  });
-  for(const id of Object.keys(sectionMap)){const host=$(id);if(host)menuObserver.observe(host,{childList:true,subtree:true});}
- }
-
  const base = 'hareharePortal/shared/';
  const db = () => window.HareFirebase?.database;
  const root = () => !!window.HareFirebase?.isRoot?.() && window.HareAdmin?.currentAccount?.()?.id === 'hare01';
@@ -342,6 +327,7 @@
  }
  let lastRenderedView='';
  function render(viewId){
+  removeObsoleteFooter();
   const entering=lastRenderedView!==viewId;lastRenderedView=viewId;
   if(viewId==='view-calendar')calendarView();
   if(viewId==='view-menu-admin')adminView();
@@ -430,7 +416,7 @@
  }
  function init(go){
   navigate=go;if(subscribed)return;subscribed=true;
-  renderDashboard();watchInnerMenus();
+  renderDashboard();removeObsoleteFooter();
   if(!db()){readError='Firebase에 연결하지 못했습니다. 일정을 불러올 수 없습니다.';calendarView();return;}
   db().ref(base+'calendarEvents').on('value',snap=>{events=snap.val()||{};readError='';renderDashboard();calendarView();},err=>{readError='일정 읽기 실패: '+err.message;calendarView();});
   db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
