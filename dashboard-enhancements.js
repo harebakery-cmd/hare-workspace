@@ -374,7 +374,7 @@
   if(!db()){readError='Firebase에 연결하지 못했습니다. 일정을 불러올 수 없습니다.';calendarView();return;}
   db().ref(base+'calendarEvents').on('value',snap=>{events=snap.val()||{};readError='';renderDashboard();calendarView();},err=>{readError='일정 읽기 실패: '+err.message;calendarView();});
   db().ref(base+'menuConfig').on('value',snap=>{configRaw=snap.val();config=configRaw;menuError='';applyMenu();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);},err=>{menuError='메뉴 설정 읽기 실패: '+err.message;adminView();});
-  db().ref(base+'moduleConfig').on('value',snap=>{moduleConfigRaw=snap.exists()?snap.val():{};moduleConfig=moduleConfigRaw||{};localStorage.setItem('harePortalModuleConfig',JSON.stringify(moduleConfig));applyMenu();moduleSettingsMarkup();},err=>{moduleConfigRaw=null;moduleConfig={};const status=$('hd-module-settings');if(status)status.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-error">업무 설정을 읽지 못했습니다. Firebase Rules에 moduleConfig 읽기 규칙이 있는지 확인해주세요.</p>';});
+  db().ref(base+'moduleConfig').on('value',snap=>{moduleConfigRaw=snap.exists()?snap.val():{};moduleConfig=moduleConfigRaw||{};applyMenu();moduleSettingsMarkup();},err=>{moduleConfigRaw=null;moduleConfig={};const status=$('hd-module-settings');if(status)status.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-error">업무 설정을 읽지 못했습니다. Firebase Rules에 moduleConfig 읽기 규칙이 있는지 확인해주세요.</p>';});
   syncHistoryImports();
  }
  document.addEventListener('click',async event=>{
