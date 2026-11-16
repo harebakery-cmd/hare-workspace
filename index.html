@@ -935,6 +935,37 @@ function showAddedOrderProduct(product,storeId){
  }
  notice(`${product.name} · ${sBy(storeId)?.name||storeId} Firebase 저장 완료`,3200);
 }
+let savingProductCompletion=false;
+async function saveProductCompletion(ids,done){
+ if(savingProductCompletion)throw Error('완료 상태를 저장하고 있습니다.');
+ if(dirty)throw Error('입력 중인 내용을 저장한 뒤 완료 상태를 변경해주세요.');
+ const db=window.HareFirebase?.database;
+ if(!db)throw Error('Firebase 연결을 확인해주세요.');
+ const productsById=new Map(state.products.filter(p=>ids.includes(p.id)).map(p=>[p.id,p]));
+ if(productsById.size!==new Set(ids).size)throw Error('등록된 제품을 찾을 수 없습니다.');
+ const completedAt=new Date().toISOString();
+ const seed={stores:state.stores,products:state.products,categories:state.categories||[],orderCatalogVersion:state.orderCatalogVersion||0};
+ const withCompletion=p=>({...p,boardDone:done,boardDoneAt:done?(p.boardDoneAt||completedAt):null});
+ savingProductCompletion=true;
+ try{
+  notice('완료 상태를 저장하는 중…');
+  const result=await db.ref('hareharePortal/shared/catalog').transaction(current=>{
+   const base=current||seed;
+   if(!Array.isArray(base.products))return;
+   const found=new Set();
+   const products=base.products.map(p=>{
+    if(!p||!productsById.has(p.id))return p;
+    found.add(p.id);
+    return withCompletion(p);
+   });
+   for(const [id,p] of productsById)if(!found.has(id))products.push(withCompletion(p));
+   return {...base,products};
+  },undefined,false);
+  if(!result.committed)throw Error('Firebase에서 완료 상태를 저장하지 못했습니다.');
+  const refreshed=applyCloudNode(result.snapshot.val(),'catalog');
+  notice(refreshed?(done?`${productsById.size}개 제품을 완료 처리했습니다.`:'완료 상태를 해제했습니다.'):'완료 상태를 저장했습니다. 화면을 새로고침해주세요.',3200);
+ }finally{savingProductCompletion=false;}
+}
 function productionWrites(before,next,db){const writes=[],path='hareharePortal/shared/production';for(const key of new Set([...Object.keys(before.production||{}),...Object.keys(next.production||{})]))if(JSON.stringify(before.production?.[key])!==JSON.stringify(next.production?.[key]))writes.push(db.ref(path).child(key).set(next.production?.[key]??null));return writes;}
 function commit(next){if(blocked)throw Error(blocked);if(localStorage.getItem(KEY)!==raw)throw Error('다른 창에서 데이터가 변경되었습니다. 새로고침 후 다시 입력해주세요.');next.revision=(state.revision||0)+1;next.updatedAt=new Date().toISOString();M.validate(next);const before=state,catalogChanged=JSON.stringify(before.products)!==JSON.stringify(next.products)||JSON.stringify(before.stores)!==JSON.stringify(next.stores)||JSON.stringify(before.categories||[])!==JSON.stringify(next.categories||[]),productionChanged=JSON.stringify(before.production)!==JSON.stringify(next.production);const value=JSON.stringify(next);localStorage.setItem(KEY,value);raw=value;state=next;dirty=false;home();notice('저장 중…');const db=window.HareFirebase?.database;if(!db){notice('이 기기에 저장했지만 Firebase SDK 연결에 실패했습니다.');return;}const writes=orderDiff(before,next,db);if(catalogChanged)writes.push(catalogWrite(before,next,db));if(productionChanged)writes.push(...productionWrites(before,next,db));Promise.all(writes).then(()=>notice('Firebase에 저장했습니다. 다른 기기에도 반영됩니다.')).catch(err=>notice('이 기기에 저장했지만 Firebase 저장 실패: '+(err.code==='PERMISSION_DENIED'?'주요 업무 공개 읽기·쓰기 규칙을 게시해야 합니다.':err.message)));}
 function dayKST(value){if(!value)return '';const d=new Date(value);return Number.isNaN(d.valueOf())?'':new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(d);}
@@ -1111,8 +1142,8 @@ case'delete-bulletin':{const account=HareAdmin.currentAccount?.(),item=bulletinI
 case'add-ticker':{requireAdmin();requireRoot();const input=document.getElementById('ticker-new-text'),text=input?.value.trim();if(!text)throw Error('전달사항을 입력해주세요.');if(text.length>180)throw Error('전달사항은 180자 이내로 입력해주세요.');await writeTicker([...tickerItems,{id:'t-'+crypto.randomUUID(),text,updatedAt:new Date().toISOString()}]);HareAdmin.render('view-admin');break;}
 case'save-ticker':{requireAdmin();requireRoot();const input=document.querySelector(`[data-ticker-text="${CSS.escape(b.dataset.id)}"]`),text=input?.value.trim();if(!text)throw Error('전달사항을 입력해주세요.');await writeTicker(tickerItems.map(x=>x.id===b.dataset.id?{...x,text,updatedAt:new Date().toISOString()}:x));HareAdmin.render('view-admin');break;}
 case'delete-ticker':{requireAdmin();requireRoot();if(!confirm('이 전달사항을 삭제할까요?'))break;await writeTicker(tickerItems.filter(x=>x.id!==b.dataset.id));HareAdmin.render('view-admin');break;}
-case'toggle-new-product-done':{requireAdmin();const p=pBy(b.dataset.id);if(!p)throw Error('등록된 제품을 찾을 수 없습니다.');const done=b.dataset.done!=='true';commit(M.updateProduct(state,{...p,boardDone:done,boardDoneAt:done?new Date().toISOString():null}));render(current);break;}
-case'complete-selected-new-products':{requireAdmin();const selected=[...document.querySelectorAll('#view-newprod [data-new-product-select]:checked:not(:disabled)')].map(i=>i.dataset.id);if(!selected.length)throw Error('완료 처리할 제품을 먼저 선택해주세요.');if(!confirm(`선택한 ${selected.length}개 제품을 완료 처리할까요?`))break;const completedAt=new Date().toISOString();let next=state;for(const id of selected){const product=next.products.find(x=>x.id===id);if(product&&!product.boardDone)next=M.updateProduct(next,{...product,boardDone:true,boardDoneAt:completedAt});}commit(next);render(current);break;}
+case'toggle-new-product-done':{requireAdmin();await saveProductCompletion([b.dataset.id],b.dataset.done!=='true');break;}
+case'complete-selected-new-products':{requireAdmin();const selected=[...document.querySelectorAll('#view-newprod [data-new-product-select]:checked:not(:disabled)')].map(i=>i.dataset.id);if(!selected.length)throw Error('완료 처리할 제품을 먼저 선택해주세요.');if(!confirm(`선택한 ${selected.length}개 제품을 완료 처리할까요?`))break;await saveProductCompletion(selected,true);break;}
 case'open-recipe-register':{if(!canLeave())return;recipeEditorOpen=true;const first=state.products.find(p=>p.active&&(!Array.isArray(p.배합표)||!p.배합표.some(r=>String(r?.name||'').trim())))||state.products.find(p=>p.active);recipeProductId=first?.id||'';recipeRows=recipeDefaults(recipeProductId?{...pBy(recipeProductId),배합표:[]}:null);render(current);break;}
 case'open-recipe-product':{if(!canLeave())return;const p=pBy(b.dataset.id);if(!p)throw Error('배합표 제품을 찾을 수 없습니다.');recipeProductId=p.id;recipeRows=recipeDefaults(p);recipeEditorOpen=true;render(current);break;}
 case'close-recipe-editor':{if(!canLeave())return;recipeEditorOpen=false;render(current);break;}
