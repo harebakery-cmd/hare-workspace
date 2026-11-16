@@ -3,13 +3,10 @@
  'use strict';
  const $ = id => document.getElementById(id);
  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- const builtins = [
-  ['view-bulletin','공지사항','today'],['view-calendar','일정표','today'],
-  ['view-order','제품 발주표','today'],['view-newprod','신제품 등록','today'],
-  ['view-recipe','배합표','today'],['view-production','생산 일지','today'],
-  ['view-origin','원산지(원라벨관리)','today'],['view-schedule','스케줄 매니저','resources'],
-  ['view-showcard','쇼카드','resources'],['view-docs','직원 연락처 및 서류','resources']
- ];
+ const menuGroups=[['today','TODAY'],['resources','자료'],['external','외부 링크']];
+ const builtins=menuGroups.slice(0,2).flatMap(([group])=>[...document.querySelectorAll(`#sidebar [data-menu-group="${group}"] > button[data-target]`)].filter(el=>el.dataset.target!=='view-showcard').map(el=>[el.dataset.target,el.lastChild.textContent.trim(),group]));
+ const defaultBoardLinks=[...document.querySelectorAll('#sidebar [data-menu-group="external"] > a[data-menu-link-id]')].map(el=>({id:el.dataset.menuLinkId,label:[...el.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent.trim()).join(' ').trim(),url:el.href,group:'external',visible:true}));
+ const groupOptions=value=>menuGroups.map(([id,label])=>`<option value="${id}" ${value===id?'selected':''}>${label}</option>`).join('');
  const builtinIds = new Set(builtins.map(row => row[0]));
 
  const moduleDefaults = [
@@ -27,7 +24,7 @@
  ];
  const moduleRank = {all:0,staff:1,manager:2,admin:3,super:4};
 
- const boardDefaults = () => builtins.map(([id,label,group]) => ({id,label,group,visible:true,home:['view-order','view-newprod','view-recipe','view-production','view-origin'].includes(id)}));
+ const boardDefaults = () => builtins.map(([id,label,group]) => ({id,label,group,visible:true,home:['view-order','view-order-dungok','view-newprod','view-recipe','view-production','view-origin'].includes(id)}));
  const sectionMap = {
   'view-calendar': [['calendar','달력'],['agenda','선택 날짜 일정']],
   'view-bulletin': [['list','공지 목록'],['compose','공지 작성']],
@@ -36,7 +33,8 @@
   'view-origin': [['products','제품 선택'],['edit','원산지 정보'],['queue','원라벨 목록']]
  };
  const orderStores = (() => {try{return JSON.parse($('unified-catalog')?.textContent||'{}').stores||[];}catch{return [];}})();
- sectionMap['view-order'] = [['all','전체 발주'],...orderStores.map(x=>['store:'+x.id,x.name])];
+ sectionMap['view-order'] = [['all','전체 발주'],...orderStores.filter(x=>x.id!=='dungok').map(x=>['store:'+x.id,x.name])];
+ sectionMap['view-order-dungok'] = [['all','전체 발주'],['store:dungok','둔곡점']];
  const embeddedModuleIds = new Set();
  const roleRank = {guest:0,staff:1,manager:2,admin:3,super:4};
  const accountRole = () => window.HareAdmin?.currentAccount?.()?.role || 'guest';
@@ -76,6 +74,27 @@
   'view-origin': {products:'.origin-search-label',edit:'.origin-editor-panel form',queue:'.origin-queue-panel'}
  };
  const selectedSection={};
+ function applyOrderTabs(boardId,selectDefault=false){
+  if(!['view-order','view-order-dungok'].includes(boardId))return;
+  const saved=boards().find(row=>row.id===boardId)?.sections;
+  if(!Array.isArray(saved)||!saved.length)return;
+  const tabs=$(boardId)?.querySelector('.u-store-tabs');
+  if(!tabs)return;
+  const orderTabs=new Map([...tabs.querySelectorAll('[data-store-id]')].map(el=>[el.dataset.storeId?('store:'+el.dataset.storeId):'all',el]));
+  const visible=[];
+  for(const section of sections(boardId)){
+   const tab=orderTabs.get(section.id);
+   if(!tab)continue;
+   tab.textContent=section.label;
+   tab.hidden=!canShowSection(section);
+   tab.style.display=tab.hidden?'none':'';
+   tabs.append(tab);
+   if(!tab.hidden)visible.push({tab,section});
+  }
+  const active=[...orderTabs.values()].find(tab=>tab.getAttribute('aria-pressed')==='true');
+  const preferred=visible.find(row=>row.section.default)?.tab||visible[0]?.tab;
+  if(preferred&&active!==preferred&&(selectDefault||active?.hidden))preferred.click();
+ }
  function innerMenu(boardId){
   $(boardId)?.querySelector('.hd-inner-nav')?.remove();
  }
@@ -85,7 +104,7 @@
   const host=$(boardId);
   if(!host?.classList.contains('active')){if(!navigate?.(boardId))return;}
   selectedSection[boardId]=id;
-  if(boardId==='view-order'&&!id.startsWith('app:')){
+  if(['view-order','view-order-dungok'].includes(boardId)&&!id.startsWith('app:')){
    const storeId=id==='all'?'':id.startsWith('store:')?id.slice(6):null;
    if(storeId!==null){const button=[...host.querySelectorAll('.u-store-tabs [data-store-id]')].find(x=>x.dataset.storeId===storeId);if(button?.getAttribute('aria-pressed')!=='true')button?.click();}
   }else if(boardId==='view-recipe'&&id==='register'&&!host.querySelector('.u-recipe-editor')){
@@ -108,12 +127,20 @@
  function boards(){
   const saved = Array.isArray(config?.boards) ? config.boards : [];
   const byId = new Map(saved.filter(row => builtinIds.has(row?.id)).map(row => [row.id,row]));
-  return boardDefaults().map(row => ({...row,...byId.get(row.id),id:row.id})).sort((a,b) => {
+  const list=boardDefaults().map(row => ({...row,...byId.get(row.id),id:row.id})).sort((a,b) => {
    const ai=saved.findIndex(x=>x?.id===a.id),bi=saved.findIndex(x=>x?.id===b.id);
    return (ai<0?builtins.findIndex(x=>x[0]===a.id)+100:ai)-(bi<0?builtins.findIndex(x=>x[0]===b.id)+100:bi);
   });
+  if(!byId.has('view-order-dungok')){const at=list.findIndex(row=>row.id==='view-order-dungok'),[row]=list.splice(at,1),after=list.findIndex(row=>row.id==='view-order');list.splice(after+1,0,{...row,group:list[after].group});}
+  return list;
  }
- function links(){return (Array.isArray(config?.links)?config.links:[]).filter(row=>row && /^https:\/\//i.test(row.url||'') && String(row.label||'').trim()).slice(0,30);}
+ function links(){
+  const saved=(Array.isArray(config?.links)?config.links:[]).filter(row=>row&&/^https:\/\//i.test(row.url||'')&&String(row.label||'').trim()).slice(0,30);
+  const defaultsById=new Map(defaultBoardLinks.map(row=>[row.id,row]));
+  const result=saved.map(row=>defaultsById.has(row.id)?{...defaultsById.get(row.id),...row,url:defaultsById.get(row.id).url}:row);
+  for(const row of defaultBoardLinks)if(!result.some(item=>item.id===row.id))result.push(row);
+  return result;
+ }
  function modules(){const saved=Array.isArray(moduleConfig?.modules)?moduleConfig.modules:[];const byId=new Map(saved.filter(x=>moduleDefaults.some(d=>d.id===x?.id)).map(x=>[x.id,x]));return moduleDefaults.map(row=>({...row,...byId.get(row.id),id:row.id,mode:row.mode,url:row.url,category:row.id==='cake-menu'?'디자인':row.category}));}
  function canOpenModule(row){const role=accountRole();if(row.access==='super')return root();return (roleRank[role]??0)>=(moduleRank[row.access]??1);}
  function moduleURL(row){const url=new URL(row.url);if(row.mode==='internal'&&url.origin!==location.origin)throw Error('내부 업무 링크는 harebakery-cmd.github.io 안에서만 열 수 있습니다.');if(row.mode==='external'&&!['harehare-pop-studio.avionenpapier1.chatgpt.site','do-rim.github.io','harehare-member.avionenpapier1.chatgpt.site'].includes(url.hostname))throw Error('등록된 외부 링크 주소가 아닙니다.');return url.href;}
@@ -248,7 +275,7 @@
  }
  function moduleSettingsMarkup(){
   const host=$('hd-module-settings');if(!host)return;
-  if(!root()){host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">이 설정은 최고관리자 전용입니다.</p>';return;}
+  if(!root()){host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">편집은 최고관리자 전용입니다.</p><ul>'+modules().map(row=>'<li>'+esc(row.category)+' · '+esc(row.label)+' · '+(row.visible===false?'숨김':'표시')+'</li>').join('')+'</ul>';return;}
   if(!moduleConfigRaw){host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">Firebase 업무 설정을 불러오는 중입니다.</p>';return;}
   const accessOptions=(value)=>[['staff','로그인 직원'],['manager','직급자 이상'],['admin','관리자 이상'],['super','최고관리자만']].map(([id,label])=>'<option value="'+id+'" '+(value===id?'selected':'')+'>'+label+'</option>').join('');
   host.innerHTML='<h3>업무 메뉴·품목 설정</h3><p class="hd-muted">내부 앱은 포털 안에서 열고, 외부 서비스는 새 탭에서 엽니다. 앱별 품목과 화면 표시 항목을 먼저 등록할 수 있습니다.</p>'+modules().map(row=>'<article class="hd-module-setting" data-hd-module-row="'+row.id+'"><div class="hd-module-setting-head"><div><strong>'+esc(row.label)+'</strong><small>'+ (row.mode==='internal'?'포털 내부':'외부 새 탭')+' · '+esc(row.category)+'</small></div><label>접근 등급<select data-hd-module-access>'+accessOptions(row.access)+'</select></label><label><input type="checkbox" data-hd-module-visible '+(row.visible!==false?'checked':'')+'> 메뉴 표시</label></div>'+(row.mode==='internal'?'<label class="hd-module-field">관리 품목 (한 줄에 하나씩)<textarea data-hd-module-items rows="3" placeholder="예: 소금빵\n명장단팥빵">'+esc((row.items||[]).join('\n'))+'</textarea></label><label class="hd-module-field">화면 표시 항목 (쉼표로 구분)<input data-hd-module-fields value="'+esc((row.fields||[]).join(', '))+'" placeholder="예: 품목, 수량, 매장"></label>':'')+'</article>').join('')+'<button type="button" class="hd-primary hd-save" data-hd-modules-save>업무 설정 저장</button><p id="hd-module-status" role="status"></p><div class="hd-import-panel"><h4>이전 기록 Excel 업로드</h4><p class="hd-muted">운영 데이터와 분리해 이전 기록으로 보관합니다. .xlsx 또는 Excel에서 저장한 .csv를 지원합니다.</p><label>업무<select id="hd-import-module">'+modules().map(x=>'<option value="'+x.id+'">'+esc(x.label)+'</option>').join('')+'</select></label><div class="hd-import-controls"><input type="file" id="hd-import-file" accept=".xlsx,.csv"><button type="button" data-hd-import-preview>파일 미리보기</button></div>\${importPreviewHtml()}<h4>최근 보관 기록</h4>\${savedImportsHtml()}</div>';
@@ -271,7 +298,8 @@
  function applyMenu(){
   const legacyShowcard=document.querySelector('[data-target="view-showcard"]');if(legacyShowcard){legacyShowcard.hidden=true;legacyShowcard.style.display='none';}
   document.querySelectorAll('a[href="https://harehare-member.avionenpapier1.chatgpt.site/manage"]').forEach(link=>link.remove());
-  for(const group of ['today','resources']){
+  document.querySelectorAll('#sidebar [data-menu-link-id]').forEach(el=>{el.style.display='none';});
+  for(const [group] of menuGroups){
    const host=document.querySelector(`[data-menu-group="${group}"]`);
    if(!host)continue;
    for(const board of boards().filter(row=>row.group===group)){
@@ -279,12 +307,8 @@
     if(!el)continue;
     host.append(el);
     el.hidden=board.visible===false || el.dataset.accessHidden==='true';
+    el.style.display=board.visible===false?'none':'';
     const text=el.lastChild;if(text?.nodeType===Node.TEXT_NODE)text.textContent=board.label;
-   }
-   // Move a board when its category changes, including after a Firebase update.
-   for(const board of boards().filter(row=>row.group!==group)){
-    const el=host.querySelector(`[data-target="${board.id}"]`);
-    if(el)document.querySelector(`[data-menu-group="${board.group}"]`)?.append(el);
    }
    host.querySelectorAll('[data-custom-menu]').forEach(el=>el.remove());
    for(const item of links().filter(row=>row.group===group)){
@@ -293,14 +317,13 @@
     a.textContent='↗  '+item.label;a.addEventListener('click',()=>{if(window.innerWidth<1024)$('mobile-menu-btn')?.click();});host.append(a);
    }
   }
-  const standardOrder=document.querySelector('#sidebar [data-target="view-order"]');
-  const dungokOrder=document.querySelector('#sidebar [data-target="view-order-dungok"]');
-  if(standardOrder&&dungokOrder)standardOrder.after(dungokOrder);
   for(const row of boards()){
    const card=document.querySelector(`#view-dashboard [data-open="${row.id}"]`);
    if(card)card.hidden=row.visible===false || row.home===false || card.dataset.accessHidden==='true';
   }
   renderModuleMenu();
+  const active=document.querySelector('.order-page.active');
+  if(active)applyOrderTabs(active.id);
  }
  function monthGrid(host, compact){
   if(!host)return;
@@ -355,10 +378,10 @@
   const cards=list.map((row,index)=>{
    const children=sections(row.id);
    const inner=children.length?`<div class="hd-inner-editor"><div class="hd-inner-editor-head"><span>메뉴 이름</span><span>표시</span><span>바로가기 표시 대상</span><span>기본</span><span>순서</span></div>${children.map((child,i)=>`<div class="hd-inner-editor-row" data-hd-section="${esc(child.id)}"><div><input data-hd-section-label value="${esc(child.label)}" maxlength="40" aria-label="${esc(child.label)} 내부 메뉴 이름" ${editable?'':'disabled'}><small>${esc(child.id)}</small></div><label><input type="checkbox" data-hd-section-visible ${child.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><select data-hd-section-access aria-label="${esc(child.label)} 바로가기 표시 대상" ${editable?'':'disabled'}>${accessOptions(child.access||'all')}</select><label><input type="radio" name="hd-default-${row.id}" data-hd-section-default ${child.default?'checked':''} ${editable?'':'disabled'}> 기본</label><div class="hd-inner-order"><button type="button" data-hd-move-section="-1" ${editable&&i>0?'':'disabled'} aria-label="${esc(child.label)} 위로">↑</button><button type="button" data-hd-move-section="1" ${editable&&i<children.length-1?'':'disabled'} aria-label="${esc(child.label)} 아래로">↓</button></div></div>`).join('')}</div>`:'<p class="hd-muted">이 게시판에는 포털에서 관리할 내부 메뉴가 없습니다.</p>';
-   return `<article class="hd-board-card" data-hd-board="${row.id}"><div class="hd-board-main"><div class="hd-board-name"><input data-hd-label value="${esc(row.label)}" maxlength="40" ${editable?'':'disabled'} aria-label="${esc(row.label)} 게시판 이름"><small>${row.id}</small></div><label>위치<select data-hd-group ${editable?'':'disabled'}><option value="today" ${row.group==='today'?'selected':''}>TODAY</option><option value="resources" ${row.group==='resources'?'selected':''}>자료</option></select></label><label><input type="checkbox" data-hd-visible ${row.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><label><input type="checkbox" data-hd-home ${row.home?'checked':''} ${editable?'':'disabled'} ${document.querySelector(`#view-dashboard [data-open="${row.id}"]`)?'':'disabled'}> 홈 바로가기</label><div class="hd-board-actions"><button type="button" data-hd-move="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(row.label)} 위로">↑</button><button type="button" data-hd-move="1" ${editable&&index<list.length-1?'':'disabled'} aria-label="${esc(row.label)} 아래로">↓</button><button type="button" data-hd-open-board="${row.id}">열기</button></div></div><details class="hd-board-details"><summary>내부 메뉴 관리 <span>${children.length}개</span></summary>${inner}</details></article>`;
+   return `<article class="hd-board-card" data-hd-board="${row.id}"><div class="hd-board-main"><div class="hd-board-name"><input data-hd-label value="${esc(row.label)}" maxlength="40" ${editable?'':'disabled'} aria-label="${esc(row.label)} 게시판 이름"><small>${row.id}</small></div><label>위치<select data-hd-group ${editable?'':'disabled'}><option value="today" ${row.group==='today'?'selected':''}>TODAY</option><option value="resources" ${row.group==='resources'?'selected':''}>자료</option></select></label><label><input type="checkbox" data-hd-visible ${row.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><label><input type="checkbox" data-hd-home ${row.home?'checked':''} ${editable?'':'disabled'} ${document.querySelector(`#view-dashboard [data-open="${row.id}"]`)?'':'disabled'}> 홈 바로가기</label><div class="hd-board-actions"><button type="button" data-hd-move="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(row.label)} 위로">↑</button><button type="button" data-hd-move="1" ${editable&&index<list.length-1?'':'disabled'} aria-label="${esc(row.label)} 아래로">↓</button><button type="button" data-hd-open-board="${row.id}">열기</button></div></div><details class="hd-board-details"><summary>내부 메뉴 관리 <span>${children.length}개</span></summary>${['view-order','view-order-dungok'].includes(row.id)?'<p class="hd-muted">전체·점포 탭의 이름과 순서를 바꿀 수 있습니다.</p>':'<p class="hd-muted">이 게시판의 연결 화면 목록입니다.</p>'}${inner}</details></article>`;
   }).join('');
-  const custom=links().map((x,index,all)=>`<div class="hd-custom-row" data-hd-link="${esc(x.id)}"><input data-hd-link-label value="${esc(x.label)}" maxlength="40" aria-label="메뉴 이름" ${editable?'':'disabled'}><input data-hd-link-url value="${esc(x.url)}" type="url" aria-label="메뉴 주소" ${editable?'':'disabled'}><select data-hd-link-group ${editable?'':'disabled'}><option value="today" ${x.group==='today'?'selected':''}>TODAY</option><option value="resources" ${x.group==='resources'?'selected':''}>자료</option></select><label><input type="checkbox" data-hd-link-visible ${x.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><button type="button" data-hd-move-link="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(x.label)} 위로">↑</button><button type="button" data-hd-move-link="1" ${editable&&index<all.length-1?'':'disabled'} aria-label="${esc(x.label)} 아래로">↓</button><button type="button" data-hd-remove-link="${esc(x.id)}" ${editable?'':'disabled'}>삭제</button></div>`).join('');
-  host.innerHTML=`<div class="hd-page-head"><span class="hd-kicker">ADMIN</span><h2>게시판 · 메뉴 관리</h2><p>게시판을 펼쳐 내부 메뉴의 이름, 순서, 표시 여부와 기본 항목을 설정합니다.</p><p class="hd-access-help"><strong>바로가기 표시 대상</strong>은 내부 메뉴 버튼의 노출 범위입니다. 게시글 읽기·글쓰기 권한은 변경되지 않습니다. 화면 접근 권한은 ‘아이디 · 권한 관리’에서 설정합니다.</p></div>${!editable?'<p class="hd-error">게시판 메뉴 저장에는 Firebase 인증이 연결된 관리자 계정 또는 최고관리자 로그인이 필요합니다.</p>':''}${menuError?`<p class="hd-error">${esc(menuError)}</p>`:''}<section class="hd-panel"><div class="hd-board-list">${cards}</div></section><section class="hd-panel"><h3>추가 메뉴</h3><p class="hd-muted">새 메뉴는 HTTPS 링크로 연결됩니다. 기존 게시판의 내용과 권한은 그대로 유지됩니다.</p><div id="hd-custom-list">${custom}</div>${editable?'<button type="button" data-hd-add-link>+ 링크 메뉴 추가</button>':''}</section>${editable?'<button type="button" class="hd-primary hd-save" data-hd-save>전체 메뉴 저장</button>':''}<p id="hd-menu-status" role="status"></p><section class="hd-panel" id="hd-module-settings"></section>`;
+  const custom=links().map((x,index,all)=>`<div class="hd-custom-row" data-hd-link="${esc(x.id)}"><input data-hd-link-label value="${esc(x.label)}" maxlength="40" aria-label="메뉴 이름" ${editable?'':'disabled'}><input data-hd-link-url value="${esc(x.url)}" type="url" aria-label="메뉴 주소" ${editable&&!defaultBoardLinks.some(row=>row.id===x.id)?'':'disabled'}><select data-hd-link-group ${editable?'':'disabled'}>${groupOptions(x.group)}</select><label><input type="checkbox" data-hd-link-visible ${x.visible!==false?'checked':''} ${editable?'':'disabled'}> 표시</label><button type="button" data-hd-move-link="-1" ${editable&&index>0?'':'disabled'} aria-label="${esc(x.label)} 위로">↑</button><button type="button" data-hd-move-link="1" ${editable&&index<all.length-1?'':'disabled'} aria-label="${esc(x.label)} 아래로">↓</button><button type="button" data-hd-remove-link="${esc(x.id)}" ${editable&&!defaultBoardLinks.some(row=>row.id===x.id)?'':'disabled'}>삭제</button></div>`).join('');
+  host.innerHTML=`<div class="hd-page-head"><span class="hd-kicker">ADMIN</span><h2>게시판 · 메뉴 관리</h2><p>햄버거 메뉴의 이름, 위치, 순서, 표시 여부를 관리합니다. 내부 메뉴 목록에서 연결된 화면을 확인할 수 있습니다.</p></div>${!editable?'<p class="hd-error">게시판 메뉴 저장에는 Firebase 인증이 연결된 관리자 계정 또는 최고관리자 로그인이 필요합니다.</p>':''}${menuError?`<p class="hd-error">${esc(menuError)}</p>`:''}<section class="hd-panel"><div class="hd-board-list">${cards}</div></section><section class="hd-panel"><h3>외부 링크 및 추가 메뉴</h3><p class="hd-muted">기본 외부 링크는 위치와 표시 여부를 바꿀 수 있습니다. 새 링크는 HTTPS 주소로 추가하세요.</p><div id="hd-custom-list">${custom}</div>${editable?'<button type="button" data-hd-add-link>+ 링크 메뉴 추가</button>':''}</section>${editable?'<button type="button" class="hd-primary hd-save" data-hd-save>전체 메뉴 저장</button>':''}<p id="hd-menu-status" role="status"></p><section class="hd-panel"><h3>고정 관리 메뉴</h3><p class="hd-muted">${[...document.querySelectorAll('#admin-category [data-target]')].map(el=>esc(el.lastChild.textContent.trim())).join(' · ')}</p></section><section class="hd-panel" id="hd-module-settings"></section>`;
   moduleSettingsMarkup();
  }
  function readAdminForm(){
@@ -377,7 +400,7 @@
   });
   if(list.length!==builtins.length||list.some(x=>!x.label||!['today','resources'].includes(x.group)))throw Error('게시판 메뉴 이름과 위치를 확인해주세요.');
   const custom=[...document.querySelectorAll('[data-hd-link]')].map(row=>({id:row.dataset.hdLink,label:row.querySelector('[data-hd-link-label]').value.trim(),url:row.querySelector('[data-hd-link-url]').value.trim(),group:row.querySelector('[data-hd-link-group]').value,visible:row.querySelector('[data-hd-link-visible]').checked}));
-  if(custom.length>30||custom.some(x=>!x.label||!/^https:\/\//i.test(x.url)||!['today','resources'].includes(x.group)))throw Error('추가 메뉴의 이름과 HTTPS 주소를 확인해주세요.');
+  if(custom.length>30||custom.some(x=>!x.label||!/^https:\/\//i.test(x.url)||!menuGroups.some(([group])=>group===x.group)))throw Error('추가 메뉴의 이름과 HTTPS 주소를 확인해주세요.');
   return {version:1,boards:list,links:custom,updatedAt:new Date().toISOString()};
  }
  function syncOrderButtons(){
@@ -453,7 +476,7 @@
    if(btn.dataset.hdMove){const row=btn.closest('[data-hd-board]'),next=Number(btn.dataset.hdMove)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMove)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
    if(btn.dataset.hdMoveSection){const row=btn.closest('[data-hd-section]'),next=Number(btn.dataset.hdMoveSection)<0?row.previousElementSibling:row.nextElementSibling;if(next?.matches('[data-hd-section]')){if(Number(btn.dataset.hdMoveSection)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
    if(btn.dataset.hdMoveLink){const row=btn.closest('[data-hd-link]'),next=Number(btn.dataset.hdMoveLink)<0?row.previousElementSibling:row.nextElementSibling;if(next){if(Number(btn.dataset.hdMoveLink)<0)next.before(row);else next.after(row);syncOrderButtons();}return;}
-   if(btn.hasAttribute('data-hd-add-link')){const host=$('hd-custom-list'),row=document.createElement('div');row.className='hd-custom-row';row.dataset.hdLink='link-'+crypto.randomUUID();row.innerHTML='<input data-hd-link-label maxlength="40" placeholder="메뉴 이름" aria-label="메뉴 이름"><input data-hd-link-url type="url" placeholder="https://" aria-label="메뉴 주소"><select data-hd-link-group><option value="today">TODAY</option><option value="resources">자료</option></select><label><input type="checkbox" data-hd-link-visible checked> 표시</label><button type="button" data-hd-move-link="-1" aria-label="위로">↑</button><button type="button" data-hd-move-link="1" aria-label="아래로">↓</button><button type="button" data-hd-remove-link>삭제</button>';host.append(row);syncOrderButtons();row.querySelector('input').focus();return;}
+   if(btn.hasAttribute('data-hd-add-link')){const host=$('hd-custom-list'),row=document.createElement('div');row.className='hd-custom-row';row.dataset.hdLink='link-'+crypto.randomUUID();row.innerHTML='<input data-hd-link-label maxlength="40" placeholder="메뉴 이름" aria-label="메뉴 이름"><input data-hd-link-url type="url" placeholder="https://" aria-label="메뉴 주소"><select data-hd-link-group>'+groupOptions('external')+'</select><label><input type="checkbox" data-hd-link-visible checked> 표시</label><button type="button" data-hd-move-link="-1" aria-label="위로">↑</button><button type="button" data-hd-move-link="1" aria-label="아래로">↓</button><button type="button" data-hd-remove-link>삭제</button>';host.append(row);syncOrderButtons();row.querySelector('input').focus();return;}
    if(btn.hasAttribute('data-hd-remove-link')){btn.closest('[data-hd-link]').remove();syncOrderButtons();return;}
    if(btn.hasAttribute('data-hd-save')){btn.disabled=true;try{await saveMenu();}finally{btn.disabled=false;}}
   }catch(err){const status=$('hd-menu-status')||$('hd-event-form')?.querySelector('[role="status"]');if(status)status.textContent='저장하지 못했습니다: '+err.message;else alert(err.message);}
@@ -470,6 +493,6 @@
   }catch(err){status.textContent='저장하지 못했습니다: '+err.message;}
  });
  window.addEventListener('hare-admin-change',()=>{syncHistoryImports();editEvent='';applyMenu();calendarView();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);});
- window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu};
+ window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu,applyOrderTabs};
  window.HareWorkspace={modules,getModuleSettings:id=>modules().find(x=>x.id===id)||null,getHistoryImports:id=>Object.values(historyImports||{}).filter(x=>!id||x.moduleId===id),openModule};
 })();
