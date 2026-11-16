@@ -548,6 +548,48 @@ input[type=button],input[type=submit]{min-height:25px!important;padding:5px 8px!
 </style>
 <style id="dashboard-menu-icon-style">#mobile-menu-btn svg[hidden]{display:none!important}#mobile-menu-btn .header-hamburger-icon{display:block;width:24px;height:24px;flex-shrink:0}</style>
 <link rel="stylesheet" href="./dashboard-enhancements.css">
+<style id="order-mobile-layout">
+.order-page { max-width: 1080px; }
+.order-page .u-table-wrap { border-radius: 14px; }
+.order-page .u-table { font-size: 13px; line-height: 1.5; }
+.order-page .u-table tbody th, .order-page .u-table tbody td { padding: 8px 6px; }
+.order-page .u-table thead th { padding: 10px 6px; font-size: 15px; font-weight: 700; }
+.order-page .u-table th:first-child { padding-left: 12px; }
+.order-page .u-table .u-category th { padding: 6px 16px; font-size: 15px; font-weight: 800; }
+.order-page .u-table tfoot th, .order-page .u-table tfoot td { padding: 8px 6px; font-size: 13px; }
+.order-page .u-table .u-product-name { white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+.order-page .u-table .u-qty { width: 68px; height: 32px; min-height: 32px; padding: 5px 6px; font-size: 13px; border-radius: 7px; }
+.order-page .u-order-summary col:first-child { width: 28%; }
+#view-order-dungok .u-order-summary col:first-child { width: auto; }
+#view-order-dungok .u-order-summary col:not(:first-child) { width: clamp(58px, 10vw, 108px); }
+.order-page .u-order-entry col:last-child { width: 100px; }
+.order-page .u-order-controls input[type="date"] {
+  box-sizing: border-box; display: block; width: 100%; min-width: 0; max-width: 100%;
+}
+@media (max-width: 640px) {
+  #scroll-container:has(.order-page.active) {
+    padding: 14px 8px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  .order-page .u-heading { gap: 8px; margin-bottom: 14px; }
+  .order-page .u-panel { padding: 8px; }
+  .order-page .u-order-controls { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 8px; margin: 0 0 10px; }
+  .order-page .u-order-controls > .u-field, .order-page .u-store-tabs { min-width: 0; }
+  .order-page .u-order-controls input[type="date"] { min-height: 44px; font-size: 16px; }
+  .order-page .u-order-controls input[type="date"]::-webkit-date-and-time-value { min-width: 0; text-align: left; }
+  .order-page .u-order-controls .u-btn { min-height: 44px !important; }
+  .order-page .u-tools [data-action="save-order"], .order-page .u-tools [data-action="open-order-product-picker"] { min-height: 40px !important; }
+  #view-order-dungok .u-store-tabs > .u-btn { flex: 1 1 0; }
+  .order-page .u-table-wrap { border-radius: 10px; }
+  .order-page .u-table { font-size: 12px; }
+  .order-page .u-table tbody th, .order-page .u-table tbody td { padding: 7px 4px; }
+  .order-page .u-table thead th { padding: 8px 4px; font-size: 13px; }
+  .order-page .u-table th:first-child { padding-left: 8px; }
+  .order-page .u-table .u-category th { padding: 6px 8px; }
+  .order-page .u-order-entry tbody th:not([colspan]), .order-page .u-order-entry tbody td { padding-block: 10px; font-size: 13px; }
+  .order-page .u-order-entry col:last-child { width: 88px; }
+  .order-page .u-table .u-qty { width: 72px; height: 40px; min-height: 40px; font-size: 16px; border-radius: 10px; }
+}
+</style>
 </head>
 <body class="overflow-hidden">
 
@@ -959,7 +1001,7 @@ function order(){
  const hiddenList=store?state.products.filter(hidden):[];
  const heading=separate?'제품발주표 (둔곡)':'제품 발주표';
  const description=store?esc(sBy(store)?.name||heading)+' · 수량을 입력하고 발주 저장을 눌러주세요.':separate?'날짜별 둔곡점 전체 수량을 확인합니다. 수량 입력은 둔곡 탭에서 할 수 있습니다.':'전체 집계는 조회 전용입니다. 둔곡점 자체 생산분은 제품발주표 (둔곡)에서 확인할 수 있습니다.';
- return base(heading,description)+`<div class="u-panel"><div class="u-tools u-order-controls">${field('날짜','date',date,'date','data-filter="date"')}<div class="u-store-tabs" role="group" aria-label="발주 지점 선택">${button('order-store','전체',`data-store-id="" aria-pressed="${!store}"`)}${boardStores.map(s=>button('order-store',esc(s.name.replace(/점$/,'')),`data-store-id="${s.id}" aria-pressed="${store===s.id}"`)).join('')}</div></div><div class="u-tools">${store?button('save-order','발주 저장'):''}${store&&isAdmin()?button('open-order-product-picker','제품 추가'):''}<span id="u-dirty"></span></div>${store?orderWriter():''}<div class="u-table-wrap"><table class="u-table"><colgroup><col style="width:${store?'60':'30'}%">${stores.map(()=>'<col>').join('')}${store?'':'<col style="width:12%">'}</colgroup><thead><tr><th>품목</th>${stores.map(s=>`<th title="${esc(s.name)}" aria-label="${esc(store?'수량':s.name)}">${store?'수량':esc(separate?s.name:shortStore(s))}</th>`).join('')}${store?'':'<th>합계</th>'}</tr></thead><tbody>${rows||`<tr><td colspan="${stores.length+(store?1:2)}" class="u-empty">표시할 제품이 없습니다.</td></tr>`}</tbody><tfoot><tr><th>표시 합계</th>${stores.map(s=>`<td data-col-total="${s.id}"></td>`).join('')}${store?'':'<td id="u-grand-total"></td>'}</tr></tfoot></table></div><p class="u-footer">새 날짜의 수량은 0부터 시작하며 전날 수량은 이월하지 않습니다.${store?' 숨김 아이콘은 이 지점에만 적용됩니다. 판매 지점 미지정 제품은 조회만 가능합니다. '+(separate?'숨긴 제품의 기존 수량은 조회할 수 있습니다.':'숨겨도 기존 수량은 전체 시트에 남습니다.'):''}</p>${store&&hiddenList.length?`<div class="u-hidden-products"><p>이 지점에서 숨긴 제품 ${hiddenList.length}개 ${isAdmin()?'· 숨김 해제는 현재 선택 지점에만 적용됩니다.':'· 관리자 로그인 후 숨김을 해제할 수 있습니다.'}</p>${isAdmin()?hiddenList.map(p=>`<div class="u-hidden-row"><span>${esc(p.name)}</span><span class="u-unavailable" title="이 지점 발주 대상에서 숨김">–</span>${button('unhide-product','숨김 해제',`data-id="${p.id}"`)}</div>`).join(''):''}</div>`:''}</div>${orderPickerOpen?orderProductPicker():''}`+tools();
+ return base(heading,description)+`<div class="u-panel"><div class="u-tools u-order-controls">${field('날짜','date',date,'date','data-filter="date"')}<div class="u-store-tabs" role="group" aria-label="발주 지점 선택">${button('order-store','전체',`data-store-id="" aria-pressed="${!store}"`)}${boardStores.map(s=>button('order-store',esc(s.name.replace(/점$/,'')),`data-store-id="${s.id}" aria-pressed="${store===s.id}"`)).join('')}</div></div><div class="u-tools">${store?button('save-order','발주 저장'):''}${store&&isAdmin()?button('open-order-product-picker','제품 추가'):''}<span id="u-dirty"></span></div>${store?orderWriter():''}<div class="u-table-wrap"><table class="u-table ${store?'u-order-entry':'u-order-summary'}"><colgroup><col>${stores.map(()=>'<col>').join('')}${store?'':'<col>'}</colgroup><thead><tr><th>품목</th>${stores.map(s=>`<th title="${esc(s.name)}" aria-label="${esc(store?'수량':s.name)}">${store?'수량':esc(separate?s.name:shortStore(s))}</th>`).join('')}${store?'':'<th>합계</th>'}</tr></thead><tbody>${rows||`<tr><td colspan="${stores.length+(store?1:2)}" class="u-empty">표시할 제품이 없습니다.</td></tr>`}</tbody><tfoot><tr><th>표시 합계</th>${stores.map(s=>`<td data-col-total="${s.id}"></td>`).join('')}${store?'':'<td id="u-grand-total"></td>'}</tr></tfoot></table></div><p class="u-footer">새 날짜의 수량은 0부터 시작하며 전날 수량은 이월하지 않습니다.${store?' 숨김 아이콘은 이 지점에만 적용됩니다. 판매 지점 미지정 제품은 조회만 가능합니다. '+(separate?'숨긴 제품의 기존 수량은 조회할 수 있습니다.':'숨겨도 기존 수량은 전체 시트에 남습니다.'):''}</p>${store&&hiddenList.length?`<div class="u-hidden-products"><p>이 지점에서 숨긴 제품 ${hiddenList.length}개 ${isAdmin()?'· 숨김 해제는 현재 선택 지점에만 적용됩니다.':'· 관리자 로그인 후 숨김을 해제할 수 있습니다.'}</p>${isAdmin()?hiddenList.map(p=>`<div class="u-hidden-row"><span>${esc(p.name)}</span><span class="u-unavailable" title="이 지점 발주 대상에서 숨김">–</span>${button('unhide-product','숨김 해제',`data-id="${p.id}"`)}</div>`).join(''):''}</div>`:''}</div>${orderPickerOpen?orderProductPicker():''}`+tools();
 }
 function filterOrderPicker(dialog){
  const query=orderPickerSearch.trim().toLocaleLowerCase();
