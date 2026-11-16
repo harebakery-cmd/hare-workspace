@@ -188,7 +188,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset
 </style><style>
 .order-page .u-order-controls{align-items:end}.order-page .u-order-controls>.u-field{flex:0 1 160px;min-width:120px}
 .u-store-tabs{display:flex;flex-wrap:wrap;gap:6px;flex:1}.u-store-tabs .u-btn{padding:8px 13px;min-height:36px;font-size:12px}.u-store-tabs .u-btn[aria-pressed=true]{background:#edf0e6;color:#252e21;border-color:#fff}
-.u-order-name{display:flex;align-items:center;gap:4px;min-width:0}.u-order-name .u-product-name{flex:1;min-width:0}.u-hide-product{display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;height:24px;border-radius:5px;color:var(--muted);cursor:pointer}.u-hide-product:hover{background:#8883;color:var(--ink)}.u-hide-product:focus-visible{outline:2px solid currentColor}.u-order-value{display:block;line-height:24px;font-variant-numeric:tabular-nums}.u-hidden-products{border-top:1px solid var(--edge);margin-top:18px;padding-top:14px;font-size:12px}.u-hidden-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}.u-hidden-row .u-btn{min-height:30px;padding:5px 10px;font-size:11px}#u-product fieldset:disabled{opacity:.45}#local-admin-form label,#portal-signup-form label{font-size:13px}#local-admin-form input,#portal-signup-form label>input:not([type=checkbox]){display:block;margin-top:6px}#local-admin-error{color:#d07760}
+.u-order-name{display:flex;align-items:center;gap:4px;min-width:0}.u-order-name .u-product-name{flex:1;min-width:0}.u-hide-product{display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;height:24px;border-radius:5px;color:var(--muted);cursor:pointer}.u-hide-product:hover{background:#8883;color:var(--ink)}.u-hide-product:focus-visible{outline:2px solid currentColor}.u-order-value{display:block;line-height:24px;font-variant-numeric:tabular-nums}.u-hidden-products{border-top:1px solid var(--edge);margin-top:18px;padding-top:14px;font-size:12px}.u-hidden-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}.u-hidden-row .u-btn{min-height:30px;padding:5px 10px;font-size:11px}#u-product fieldset:disabled{opacity:.45}#local-admin-form label{font-size:13px}#local-admin-form input{display:block;margin-top:6px}#local-admin-error{color:#d07760}
 </style><style id="theme-fix">
 #theme-switcher{display:flex;align-items:center;gap:3px;padding:4px;border:1px solid var(--edge);border-radius:99px;background:rgba(128,128,128,.09);flex-shrink:0}
 #theme-switcher button{color:var(--muted);font:inherit;font-size:12px;line-height:1;padding:9px 12px;border:1px solid transparent;border-radius:99px;cursor:pointer;white-space:nowrap;background:transparent}
@@ -561,27 +561,13 @@ input[type=button],input[type=submit]{min-height:25px!important;padding:5px 8px!
     <button id="admin-login-close" type="button" class="absolute right-5 top-4 p-2 rounded-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/10" aria-label="닫기">✕</button>
     <p class="text-xs font-semibold text-gray-500 tracking-widest mb-3">HARE,HARE</p>
     <h2 id="admin-login-title" class="text-2xl font-bold mb-3">로그인</h2>
-    <p class="text-sm text-gray-500 leading-relaxed mb-6">직급자 이상은 로그인하거나 회원가입을 신청할 수 있습니다. 일반 사원은 로그인 없이 공개된 업무 자료를 볼 수 있습니다.</p>
+    <p class="text-sm text-gray-500 leading-relaxed mb-6">등록된 계정으로 로그인할 수 있습니다. 공개 업무 자료는 로그인 없이 볼 수 있습니다.</p>
     <form id="local-admin-form" class="space-y-4">
-      <label class="block">아이디 또는 가입 이메일<input id="local-admin-id" required autocomplete="username" class="w-full rounded-xl p-3 bg-white/50 dark:bg-black/30"></label>
+      <label class="block">아이디 또는 Firebase 이메일<input id="local-admin-id" required autocomplete="username" class="w-full rounded-xl p-3 bg-white/50 dark:bg-black/30"></label>
+      <label id="linked-admin-email-label" hidden>hare02에 연결된 Firebase 이메일<input id="linked-admin-email" type="email" autocomplete="off" disabled class="w-full rounded-xl p-3 bg-white/50 dark:bg-black/30"></label>
       <label class="block">비밀번호<input id="local-admin-password" type="password" required autocomplete="current-password" class="w-full rounded-xl p-3 bg-white/50 dark:bg-black/30"></label>
       <p id="local-admin-error" role="alert" class="text-sm"></p>
       <button id="local-admin-submit" type="submit" class="u-btn primary w-full">로그인</button>
-    </form>
-    <button id="portal-signup-open" type="button" class="u-btn w-full mt-3">직급자 회원가입 신청</button>
-    <form id="portal-signup-form" class="space-y-3 hidden" aria-label="직급자 회원가입 신청">
-      <p class="text-sm text-gray-500">매니저 등 직급자 이상만 신청해주세요. 최고관리자 확인 후 이용할 수 있습니다.</p>
-      <label class="block">신청 아이디<input name="id" required pattern="[-_a-zA-Z0-9]{3,32}" autocomplete="username" class="w-full rounded-xl p-3" placeholder="예: hare02"></label>
-      <label class="block">이름<input name="name" required maxlength="60" class="w-full rounded-xl p-3"></label>
-      <label class="block">소속 지점 / 부서<input name="department" required maxlength="40" class="w-full rounded-xl p-3"></label>
-      <label class="block">직급<input name="jobTitle" required maxlength="30" class="w-full rounded-xl p-3" placeholder="예: 매니저, 과장, 부장"></label>
-      <label class="block">본인 이메일<input name="email" type="email" required autocomplete="email" class="w-full rounded-xl p-3"></label>
-      <label class="block">비밀번호<input name="password" type="password" required minlength="10" autocomplete="new-password" class="w-full rounded-xl p-3"></label>
-      <label class="block">비밀번호 확인<input name="confirmPassword" type="password" required minlength="10" autocomplete="new-password" class="w-full rounded-xl p-3"></label>
-      <label class="block text-sm"><input name="managerConfirm" type="checkbox" required> 직급자 이상이며 최고관리자 승인이 필요함을 확인했습니다.</label>
-      <p id="portal-signup-message" role="status" class="text-sm"></p>
-      <button id="portal-signup-submit" type="submit" class="u-btn primary w-full">가입 신청</button>
-      <button id="portal-signup-back" type="button" class="u-btn w-full">로그인으로 돌아가기</button>
     </form>
   </div>
 </div>
@@ -680,6 +666,14 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const $=id=>document.getElementById(id),clone=x=>JSON.parse(JSON.stringify(x));
 let db=clone(defaults),raw=null,session=null,remoteUser=null,error='',accountEdit='';
 const registrationBase='hareharePortal/identity/';
+const linkedAdmin={id:'hare02',uid:'RCzMyMkfCeMTfRqbBJtWw2wAecm2'};
+function updateLinkedAdminField(){
+ const show=$('local-admin-id').value.trim()===linkedAdmin.id;
+ $('linked-admin-email-label').hidden=!show;
+ $('linked-admin-email').disabled=!show;
+ $('linked-admin-email').required=show;
+}
+$('local-admin-id').addEventListener('input',updateLinkedAdminField);
 function validate(x){
  if(!x||x.version!==1||!Array.isArray(x.users)||!x.permissions)throw Error('계정 데이터 형식이 올바르지 않습니다.');
  x.roles??={...defaultRoles};x.publicScreens??=[...primaryScreens];
@@ -697,32 +691,34 @@ function admin(){return ['admin','super'].includes(user()?.role);}
 function highest(){return user()?.role==='super';}
 function requireAdmin(){if(!admin())throw Error('관리자 로그인이 필요합니다.');}
 function requireSuper(){if(!highest())throw Error('최고관리자만 변경할 수 있습니다.');}
-function canView(id){if(id==='view-dashboard')return true;const u=user();if(primaryScreens.includes(id)||(db.publicScreens||primaryScreens).includes(id))return true;if(!u)return false;if(id==='view-order')return true;if(id==='view-accounts'||id==='view-admin')return highest();if(id==='view-menu-admin')return admin();if(u.role==='super')return true;return (u.screenPermissions??db.permissions[u.role]??[]).includes(id);}
+function canView(id){if(id==='view-dashboard')return true;const u=user();if(primaryScreens.includes(id)||(db.publicScreens||primaryScreens).includes(id))return true;if(!u)return false;if(id==='view-order')return true;if(id==='view-accounts'||id==='view-admin')return highest();if(id==='view-menu-admin')return admin();if(u.menuOnly)return false;if(u.role==='super')return true;return (u.screenPermissions??db.permissions[u.role]??[]).includes(id);}
 function emit(){window.dispatchEvent(new Event('hare-admin-change'));}
 function save(next){requireSuper();if(error)throw Error(error);if(localStorage.getItem(KEY)!==raw)throw Error('다른 창에서 계정이 변경되었습니다. 화면을 새로고침해주세요.');validate(next);const text=JSON.stringify(next);localStorage.setItem(KEY,text);db=next;raw=text;emit();}
 const hex=a=>Array.from(a,b=>b.toString(16).padStart(2,'0')).join('');
 async function hash(password,salt){if(!crypto.subtle)throw Error('암호화 기능을 지원하는 브라우저에서 열어주세요.');const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);return hex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:310000,hash:'SHA-256'},key,256)));}
 function close(){$('admin-login-dialog').classList.add('hidden');$('admin-login-dialog').classList.remove('flex');$('admin-login-btn').focus();}
-function open(){if(user()){if(window.HareUnified&&!HareUnified.canLeave())return;session=null;remoteUser=null;accountEdit='';window.HareFirebase?.auth?.signOut().catch(()=>{});emit();return;}showSignup(false);$('local-admin-form').reset();$('local-admin-error').textContent=error;$('admin-login-dialog').classList.remove('hidden');$('admin-login-dialog').classList.add('flex');$('local-admin-id').focus();}
-function showSignup(open){$('portal-signup-form').classList.toggle('hidden',!open);$('local-admin-form').classList.toggle('hidden',open);$('portal-signup-open').classList.toggle('hidden',open);$('admin-login-title').textContent=open?'회원가입 신청':'로그인';$('portal-signup-message').textContent='';if(open)$('portal-signup-form').querySelector('input').focus();else $('local-admin-id').focus();}
-$('portal-signup-open').addEventListener('click',()=>showSignup(true));
-$('portal-signup-back').addEventListener('click',()=>showSignup(false));
-$('portal-signup-form').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget,b=$('portal-signup-submit'),status=$('portal-signup-message'),d=new FormData(f),id=String(d.get('id')||'').trim(),email=String(d.get('email')||'').trim().toLowerCase(),password=String(d.get('password')||'');
- if(id==='hare01'||!/^[-_a-zA-Z0-9]{3,32}$/.test(id)){status.textContent='신청 아이디를 확인해주세요.';return;}
- if(password!==d.get('confirmPassword')){status.textContent='비밀번호가 일치하지 않습니다.';return;}
- if(!d.has('managerConfirm')){status.textContent='신청 대상 확인이 필요합니다.';return;}
- const fb=window.HareFirebase;if(!fb?.auth||!fb?.database){status.textContent='Firebase 연결을 확인해주세요.';return;}
- b.disabled=true;status.textContent='가입 신청 중입니다…';
- let credential=null;
- try{if(fb.auth.currentUser)await fb.auth.signOut();credential=await fb.auth.createUserWithEmailAndPassword(email,password);
-  await fb.database.ref(registrationBase+'requests/'+credential.user.uid).set({id,name:String(d.get('name')||'').trim(),department:String(d.get('department')||'').trim(),jobTitle:String(d.get('jobTitle')||'').trim(),email,status:'pending',createdAt:firebase.database.ServerValue.TIMESTAMP});
-  await fb.auth.signOut();f.reset();status.textContent='신청이 접수되었습니다. 최고관리자 승인 후 이메일과 비밀번호로 로그인하세요.';
- }catch(err){if(credential?.user){try{await credential.user.delete();}catch{}}status.textContent=err.code==='auth/email-already-in-use'?'이미 가입된 이메일입니다. 로그인하거나 최고관리자에게 문의해주세요.':'신청을 저장하지 못했습니다. Firebase 가입 설정과 데이터베이스 권한을 확인해주세요. '+(err.message||'');}
- finally{b.disabled=false;}
-});
+function open(){if(user()){if(window.HareUnified&&!HareUnified.canLeave())return;session=null;remoteUser=null;accountEdit='';window.HareFirebase?.auth?.signOut().catch(()=>{});emit();return;}$('local-admin-form').reset();updateLinkedAdminField();$('local-admin-error').textContent=error;$('admin-login-dialog').classList.remove('hidden');$('admin-login-dialog').classList.add('flex');$('local-admin-id').focus();}
 $('local-admin-form').addEventListener('submit',async e=>{e.preventDefault();const b=$('local-admin-submit');b.disabled=true;try{
  read();if(error)throw Error(error);const expectedRaw=raw,id=$('local-admin-id').value.trim(),u=db.users.find(u=>u.id===id),password=$('local-admin-password').value;
- if(id.includes('@')){const fb=window.HareFirebase;if(!fb?.auth||!fb?.database)throw Error('Firebase 연결을 확인해주세요.');const credential=await fb.auth.signInWithEmailAndPassword(id,password);const uid=credential.user.uid;const snapshot=await fb.database.ref(registrationBase+'profiles/'+uid).once('value');const profile=snapshot.val();if(!profile||profile.active!==true||!['manager','admin'].includes(profile.role)){await fb.auth.signOut();throw Error('승인 대기 중이거나 이용이 중지된 계정입니다. 최고관리자에게 문의해주세요.');}remoteUser={...profile,active:true,firebaseUid:uid};if(window.HareUnified&&!HareUnified.canLeave())return;session={id:profile.id,uid,remote:true};close();$('local-admin-form').reset();emit();return;}
+ if(id===linkedAdmin.id||id.includes('@')){
+  const fb=window.HareFirebase,byId=id===linkedAdmin.id;
+  const email=byId?$('linked-admin-email').value.trim():id;
+  if(!fb?.auth||!fb?.database)throw Error('Firebase 연결을 확인해주세요.');
+  if(window.HareUnified&&!HareUnified.canLeave())return;
+  const credential=await fb.auth.signInWithEmailAndPassword(email,password);
+  const uid=credential.user.uid;
+  try{
+   if(uid===linkedAdmin.uid){
+    remoteUser={id:linkedAdmin.id,name:'관리자',role:'admin',active:true,firebaseUid:uid,menuOnly:true};
+   }else{
+    if(byId)throw Error('hare02에 연결된 Firebase 이메일을 확인해주세요.');
+    const profile=(await fb.database.ref(registrationBase+'profiles/'+uid).once('value')).val();
+    if(!profile||profile.id===linkedAdmin.id||profile.active!==true||!['manager','admin'].includes(profile.role))throw Error('이용할 수 없는 계정입니다. 최고관리자에게 문의해주세요.');
+    remoteUser={...profile,active:true,firebaseUid:uid};
+   }
+  }catch(err){await fb.auth.signOut();throw err;}
+  session={id:remoteUser.id,uid,remote:true};close();$('local-admin-form').reset();updateLinkedAdminField();emit();return;
+ }
  if(id==='hare01'){const fb=window.HareFirebase;if(!fb?.auth)throw Error('Firebase 연결을 시작하지 못했습니다. 인터넷 연결을 확인해주세요.');const credential=await fb.auth.signInWithEmailAndPassword(fb.adminEmail,password);if(credential.user.uid!==fb.adminUid){await fb.auth.signOut();throw Error('Firebase 관리자 계정 UID가 등록된 최고관리자와 다릅니다.');}if(!u||!u.active)throw Error('포털 최고관리자 계정을 찾을 수 없습니다.');}
  else {if(!u||!u.active||await hash(password,u.salt)!==u.hash)throw Error('아이디 또는 비밀번호를 확인해주세요.');const fb=window.HareFirebase;if(fb?.auth?.currentUser)await fb.auth.signOut();}
  if(localStorage.getItem(KEY)!==expectedRaw)throw Error('계정이 변경되었습니다. 다시 로그인해주세요.');
@@ -747,12 +743,13 @@ function render(id){if(!adminViews.includes(id)||id==='view-menu-admin')return;c
 document.addEventListener('submit',e=>{if(['account-form','firebase-form','public-permissions-form'].includes(e.target.id))e.preventDefault();});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-access-action]');if(!b)return;const section=b.closest('.spa-page'),message=()=>b.closest('form')?.querySelector('[role="status"]')||section?.querySelector('[role="status"]');b.disabled=true;try{requireAdmin();switch(b.dataset.accessAction){
  case'toggle-approved':{requireSuper();const uid=b.dataset.uid;if(!/^[-_a-zA-Z0-9]{3,128}$/.test(uid))throw Error('계정 ID가 올바르지 않습니다.');const ref=window.HareFirebase.database.ref(registrationBase+'profiles/'+uid),profile=(await ref.once('value')).val();if(!profile)throw Error('계정을 찾을 수 없습니다.');if(!confirm(profile.name+' 계정을 '+(profile.active?'중지':'다시 사용')+'할까요?'))break;await ref.child('active').set(!profile.active);render('view-accounts');break;}
- case'approve-request':case'reject-request':{requireSuper();const uid=b.dataset.uid;if(!/^[-_a-zA-Z0-9]{3,128}$/.test(uid))throw Error('신청 ID가 올바르지 않습니다.');const fb=window.HareFirebase,ref=fb.database.ref(registrationBase+'requests/'+uid),request=(await ref.once('value')).val();if(!request||request.status!=='pending')throw Error('신청을 찾을 수 없습니다.');if(b.dataset.accessAction==='reject-request'){if(!confirm(request.name+'님의 신청을 거절할까요?'))break;await ref.remove();render('view-accounts');break;}const role=document.querySelector('[data-approval-role="'+uid+'"]')?.value;if(!['manager','admin'].includes(role))throw Error('승인 권한을 선택해주세요.');if(request.id==='hare01')throw Error('최고관리자 아이디는 사용할 수 없습니다.');const profiles=(await fb.database.ref(registrationBase+'profiles').once('value')).val()||{};if(Object.entries(profiles).some(([other,x])=>other!==uid&&x?.id===request.id))throw Error('이미 승인된 아이디입니다.');if(!confirm(request.name+'님의 '+db.roles[role]+' 권한을 승인할까요?'))break;await fb.database.ref(registrationBase+'profiles/'+uid).set({id:request.id,name:request.name,department:request.department,jobTitle:request.jobTitle,role,active:true,screenPermissions:role==='admin'?menus.map(x=>x[0]):db.permissions.manager||[],approvedAt:firebase.database.ServerValue.TIMESTAMP});await ref.remove();render('view-accounts');break;}
+ case'approve-request':case'reject-request':{requireSuper();const uid=b.dataset.uid;if(!/^[-_a-zA-Z0-9]{3,128}$/.test(uid))throw Error('신청 ID가 올바르지 않습니다.');const fb=window.HareFirebase,ref=fb.database.ref(registrationBase+'requests/'+uid),request=(await ref.once('value')).val();if(!request||request.status!=='pending')throw Error('신청을 찾을 수 없습니다.');if(b.dataset.accessAction==='reject-request'){if(!confirm(request.name+'님의 신청을 거절할까요?'))break;await ref.remove();render('view-accounts');break;}const role=document.querySelector('[data-approval-role="'+uid+'"]')?.value;if(!['manager','admin'].includes(role))throw Error('승인 권한을 선택해주세요.');if(request.id==='hare01'||request.id===linkedAdmin.id)throw Error('예약된 관리자 아이디는 사용할 수 없습니다.');const profiles=(await fb.database.ref(registrationBase+'profiles').once('value')).val()||{};if(Object.entries(profiles).some(([other,x])=>other!==uid&&x?.id===request.id))throw Error('이미 승인된 아이디입니다.');if(!confirm(request.name+'님의 '+db.roles[role]+' 권한을 승인할까요?'))break;await fb.database.ref(registrationBase+'profiles/'+uid).set({id:request.id,name:request.name,department:request.department,jobTitle:request.jobTitle,role,active:true,screenPermissions:role==='admin'?menus.map(x=>x[0]):db.permissions.manager||[],approvedAt:firebase.database.ServerValue.TIMESTAMP});await ref.remove();render('view-accounts');break;}
  case'save-public':{requireSuper();const next=clone(db);next.publicScreens=[...new Set([...primaryScreens,...new FormData($('public-permissions-form')).getAll('publicScreens')])];save(next);render('view-accounts');$('public-message').textContent='누구나 권한을 저장했습니다.';break;}
  case'new-user':requireSuper();accountEdit='';render('view-accounts');break;
  case'edit-user':{requireSuper();const u=db.users.find(u=>u.id===b.dataset.id);if(!u)throw Error('계정을 찾을 수 없습니다.');if(['super','admin'].includes(u.role))requireSuper();accountEdit=u.id;render('view-accounts');break;}
  case'save-user':{
   requireSuper();const f=$('account-form');if(!f.reportValidity())break;const d=new FormData(f),id=d.get('id').trim(),old=db.users.find(u=>u.id===id);
+  if(id===linkedAdmin.id)throw Error('hare02는 Firebase로 인증하는 관리자 계정입니다.');
   if(!accountEdit&&old)throw Error('이미 사용 중인 아이디입니다.');if(accountEdit&&id!==accountEdit)throw Error('수정 중인 아이디는 변경할 수 없습니다.');
   if(old&&['super','admin'].includes(old.role))requireSuper();const role=id==='hare01'?'super':d.get('role');if(['admin','super'].includes(role))requireSuper();
   if(!Object.hasOwn(db.roles,role))throw Error('직급을 확인해주세요.');
@@ -796,7 +793,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-acce
  }
  }}catch(err){if(message())message().textContent=err.message;}finally{b.disabled=false;}});
 window.addEventListener('storage',e=>{if(e.key===KEY){read();emit();}if(e.key===CONFIG&&$('view-admin')?.classList.contains('active'))render('view-admin');});
-window.HareAdmin={isLoggedIn:admin,hasAccount:()=>!!user(),currentAccount:()=>{const u=user();return u?{id:u.id,name:u.name,role:u.role,roleName:u.role==='super'?'관리자':u.jobTitle||db.roles[u.role],firebaseUid:u.firebaseUid||'',department:u.department||'',displayName:displayName(u)}:null;},currentUser:()=>{const u=user();return u?{id:u.id,name:u.name,role:u.role,roleName:u.role==='super'?'관리자':u.jobTitle||db.roles[u.role],firebaseUid:u.firebaseUid||'',department:u.department||'',displayName:displayName(u)}:null;},canView,open,close,render};
+window.HareAdmin={isLoggedIn:admin,canManageOperations:()=>admin()&&!user()?.menuOnly,hasAccount:()=>!!user(),currentAccount:()=>{const u=user();return u?{id:u.id,name:u.name,role:u.role,roleName:u.role==='super'?'관리자':u.jobTitle||db.roles[u.role],firebaseUid:u.firebaseUid||'',menuOnly:u.menuOnly===true,department:u.department||'',displayName:displayName(u)}:null;},currentUser:()=>{const u=user();return u?{id:u.id,name:u.name,role:u.role,roleName:u.role==='super'?'관리자':u.jobTitle||db.roles[u.role],firebaseUid:u.firebaseUid||'',menuOnly:u.menuOnly===true,department:u.department||'',displayName:displayName(u)}:null;},canView,open,close,render};
 })();
 
 </script>
@@ -856,7 +853,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
 let state,raw,blocked='',dirty=false,current='',date=today(),store='',search='',editing='',originId='',prodId='';
 let followToday=true,rolloverNotice='',orderStore='',dungokOrderStore='',guestWriter='',guestDepartment='',orderPickerOpen=false,orderPickerSearch='',orderPickerCategory='',recipeProductId='',recipeRows=[],recipeRowSeq=0,recipeEditorOpen=false,originQueue=[],originSearch='',bulletinItems=[],tickerItems=[],tickerEditing='',productionTeams=[],productionRecords=[],productionStatusError='',bulletinEditing='',bulletinViewing='';
-const isAdmin=()=>window.HareAdmin?.isLoggedIn()===true;
+const isAdmin=()=>window.HareAdmin?.canManageOperations()===true;
 function requireAdmin(){if(!isAdmin())throw Error('관리자 로그인이 필요합니다.');if(!window.HareFirebase?.isRoot())throw Error('Firebase 최고관리자 로그인이 필요합니다.');}
 function requireRoot(){if(!window.HareFirebase?.isRoot())throw Error('최고관리자 로그인 상태를 확인해주세요.');}
 try{raw=localStorage.getItem(KEY);state=raw?M.validate(JSON.parse(raw)):M.seed(catalog);if(raw){const merged=M.mergeCatalog(state,catalog);if(JSON.stringify(merged)!==JSON.stringify(state)){state=M.validate(merged);raw=JSON.stringify(state);localStorage.setItem(KEY,raw);}}}catch(e){blocked='저장 데이터를 읽을 수 없습니다. 원본 보호를 위해 저장을 중단했습니다. '+e.message;state=M.seed(catalog);}if(!window.HareAdmin?.isLoggedIn()&&state.production&&Object.keys(state.production).length){state.production={};raw=JSON.stringify(state);localStorage.setItem(KEY,raw);}
@@ -885,7 +882,7 @@ function dashboardStatusMarkup(){const todayKey=today(),dateObj=new Date(todayKe
 function tickerMarquee(){const wrap=document.getElementById('portal-ticker'),track=document.getElementById('portal-ticker-track');if(!wrap||!track)return;const lines=tickerItems.filter(x=>x&&typeof x.text==='string'&&x.text.trim());wrap.hidden=!lines.length;if(!lines.length){track.innerHTML='';return;}const content=lines.map(x=>`<span>${esc(x.text)}</span>`).join('');track.innerHTML=`<div class="portal-ticker-copy">${content}</div><div class="portal-ticker-copy" aria-hidden="true">${content}</div>`;}
 function dashboardBulletin(){
  const host=document.getElementById('dashboard-announcement-board');if(!host)return;
- const user=HareAdmin.currentAccount?.(),canWrite=!!user,
+ const user=HareAdmin.currentAccount?.(),canWrite=!!user&&!user.menuOnly,
  sorted=bulletinItems.slice().filter(x=>x&&x.id&&x.title).sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''))),
  editing=bulletinEditing?sorted.find(x=>x.id===bulletinEditing):null,
  viewed=bulletinViewing?sorted.find(x=>x.id===bulletinViewing):null;
@@ -961,7 +958,7 @@ function ingredientNames(){return [...new Set(state.products.flatMap(p=>Array.is
 function products(){
  const p={name:'',category:'기타',price:0,storeIds:[],allergens:'',note:''};
  const board=state.products.filter(x=>x.isNew).sort((a,b)=>Number(!!a.boardDone)-Number(!!b.boardDone)||String(b.registeredAt||b.updatedAt||'').localeCompare(String(a.registeredAt||a.updatedAt||'')));
- const canComplete=!!HareAdmin.isLoggedIn();
+ const canComplete=isAdmin();
  const fmtDate=v=>{if(!v)return '기록 없음';const d=new Date(v);return Number.isNaN(d.getTime())?'기록 없음':d.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
  const rows=board.map(x=>{
   const storeIds=Array.isArray(x.storeIds)?x.storeIds:[];
@@ -1031,9 +1028,9 @@ document.addEventListener('change',async e=>{const t=e.target;if(t.matches('[dat
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const selectedOrderStore=activeOrderStore();try{const required={'save-product':'view-newprod','edit-product':'view-newprod','new-product':'view-newprod','save-production':'view-production','edit-production':'view-production','save-origin':'view-origin','print-origin':'view-origin'}[b.dataset.action];if(required&&!HareAdmin.canView(required))throw Error('이 화면을 사용할 권한이 없습니다.');switch(b.dataset.action){
 case'open-bulletin':{const item=bulletinItems.find(x=>x.id===b.dataset.id);if(!item)throw Error('공지사항을 찾을 수 없습니다.');bulletinViewing=item.id;dashboardBulletin();break;}
 case'back-bulletin':bulletinViewing='';dashboardBulletin();break;
-case'edit-bulletin':{const account=HareAdmin.currentAccount?.(),item=bulletinItems.find(x=>x.id===b.dataset.id);if(!account||!item)throw Error('공지사항을 찾을 수 없습니다.');if(!['admin','super'].includes(account.role)&&item.authorId!==account.id)throw Error('작성한 공지만 수정할 수 있습니다.');bulletinViewing='';bulletinEditing=item.id;dashboardBulletin();document.getElementById('dashboard-announcement-board')?.scrollIntoView({block:'nearest',behavior:'smooth'});break;}
+case'edit-bulletin':{const account=HareAdmin.currentAccount?.(),item=bulletinItems.find(x=>x.id===b.dataset.id);if(!account||account.menuOnly||!item)throw Error('공지사항을 관리할 권한이 없습니다.');if(!['admin','super'].includes(account.role)&&item.authorId!==account.id)throw Error('작성한 공지만 수정할 수 있습니다.');bulletinViewing='';bulletinEditing=item.id;dashboardBulletin();document.getElementById('dashboard-announcement-board')?.scrollIntoView({block:'nearest',behavior:'smooth'});break;}
 case'cancel-bulletin-edit':bulletinEditing='';renderDashboard();break;
-case'delete-bulletin':{const account=HareAdmin.currentAccount?.(),item=bulletinItems.find(x=>x.id===b.dataset.id);if(!account||!item)throw Error('공지사항을 찾을 수 없습니다.');if(!['admin','super'].includes(account.role)&&item.authorId!==account.id)throw Error('작성한 공지만 삭제할 수 있습니다.');if(!confirm('이 공지사항을 삭제할까요?'))break;await window.HareFirebase.database.ref('hareharePortal/shared/bulletin/'+item.id).remove();bulletinEditing='';break;}
+case'delete-bulletin':{const account=HareAdmin.currentAccount?.(),item=bulletinItems.find(x=>x.id===b.dataset.id);if(!account||account.menuOnly||!item)throw Error('공지사항을 관리할 권한이 없습니다.');if(!['admin','super'].includes(account.role)&&item.authorId!==account.id)throw Error('작성한 공지만 삭제할 수 있습니다.');if(!confirm('이 공지사항을 삭제할까요?'))break;await window.HareFirebase.database.ref('hareharePortal/shared/bulletin/'+item.id).remove();bulletinEditing='';break;}
 case'add-ticker':{requireAdmin();requireRoot();const input=document.getElementById('ticker-new-text'),text=input?.value.trim();if(!text)throw Error('전달사항을 입력해주세요.');if(text.length>180)throw Error('전달사항은 180자 이내로 입력해주세요.');await writeTicker([...tickerItems,{id:'t-'+crypto.randomUUID(),text,updatedAt:new Date().toISOString()}]);HareAdmin.render('view-admin');break;}
 case'save-ticker':{requireAdmin();requireRoot();const input=document.querySelector(`[data-ticker-text="${CSS.escape(b.dataset.id)}"]`),text=input?.value.trim();if(!text)throw Error('전달사항을 입력해주세요.');await writeTicker(tickerItems.map(x=>x.id===b.dataset.id?{...x,text,updatedAt:new Date().toISOString()}:x));HareAdmin.render('view-admin');break;}
 case'delete-ticker':{requireAdmin();requireRoot();if(!confirm('이 전달사항을 삭제할까요?'))break;await writeTicker(tickerItems.filter(x=>x.id!==b.dataset.id));HareAdmin.render('view-admin');break;}
@@ -1085,7 +1082,7 @@ case'select-origin-product':{if(!canLeave())return;const next=pBy(b.dataset.id);
 case'print-origin':{if(dirty)throw Error('먼저 변경사항을 저장해주세요.');const items=(originQueue.length?originQueue:[originId]).map(pBy).filter(Boolean);let target=$('#u-print');if(!target){target=document.createElement('section');target.id='u-print';target.className='u-print';target.hidden=true;document.body.append(target);}target.innerHTML=items.map(p=>`<article class="u-print-sheet"><h1>${esc(p.name)}</h1><p>${p.origins.map((v,i)=>v?esc(v+' / '+((p.originVariants||[])[i]||(i===0?p.originLabelVariant:'')||'공통 원라벨')):'').filter(Boolean).join(' / ')||'원산지 미등록'}</p><p>${esc(p.allergens||'해당없음')}</p><div class="u-print-images">${p.images.map(url=>`<img src="${esc(url)}" alt="${esc(p.name)} 원라벨" referrerpolicy="no-referrer">`).join('')}</div></article>`).join('');Promise.all([...target.querySelectorAll('img')].map(img=>img.decode().catch(()=>{}))).then(()=>window.print());break;}
 case'export':{requireAdmin();const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='HAREHARE-공통데이터-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);break;}
 }}catch(err){notice('저장하지 못했습니다: '+err.message);}});
-document.addEventListener('submit',async e=>{if(e.target.id==='dashboard-bulletin-form'){e.preventDefault();const form=e.target,status=form.querySelector('[role="status"]'),account=HareAdmin.currentAccount?.();try{if(!account)throw Error('계정 로그인 후 등록할 수 있습니다.');const d=new FormData(form),title=String(d.get('title')||'').trim(),body=String(d.get('body')||'').trim(),id=String(d.get('editingId')||'');if(!title||!body)throw Error('제목과 내용을 입력해주세요.');const old=id?bulletinItems.find(x=>x.id===id):null;if(id&&(!old||(!['admin','super'].includes(account.role)&&old.authorId!==account.id)))throw Error('수정 권한이 없습니다.');const now=new Date().toISOString(),entry={title,body,authorId:old?.authorId||account.id,authorName:old?.authorName||account.displayName||account.name,createdAt:old?.createdAt||now,updatedAt:now};await writeBulletin(id,entry);bulletinEditing='';form.reset();if(status)status.textContent='공지사항을 저장했습니다.';const board=window.HareFirebase.database.ref('hareharePortal/shared/bulletin');const snap=await board.once('value'),raw=snap.val()||{};bulletinItems=Array.isArray(raw)?raw:Object.values(raw);renderDashboard();}catch(err){if(status)status.textContent=err.message;else notice(err.message);}return;}if(e.target.closest('.u-page'))e.preventDefault();});
+document.addEventListener('submit',async e=>{if(e.target.id==='dashboard-bulletin-form'){e.preventDefault();const form=e.target,status=form.querySelector('[role="status"]'),account=HareAdmin.currentAccount?.();try{if(!account||account.menuOnly)throw Error('공지사항을 등록할 권한이 없습니다.');const d=new FormData(form),title=String(d.get('title')||'').trim(),body=String(d.get('body')||'').trim(),id=String(d.get('editingId')||'');if(!title||!body)throw Error('제목과 내용을 입력해주세요.');const old=id?bulletinItems.find(x=>x.id===id):null;if(id&&(!old||(!['admin','super'].includes(account.role)&&old.authorId!==account.id)))throw Error('수정 권한이 없습니다.');const now=new Date().toISOString(),entry={title,body,authorId:old?.authorId||account.id,authorName:old?.authorName||account.displayName||account.name,createdAt:old?.createdAt||now,updatedAt:now};await writeBulletin(id,entry);bulletinEditing='';form.reset();if(status)status.textContent='공지사항을 저장했습니다.';const board=window.HareFirebase.database.ref('hareharePortal/shared/bulletin');const snap=await board.once('value'),raw=snap.val()||{};bulletinItems=Array.isArray(raw)?raw:Object.values(raw);renderDashboard();}catch(err){if(status)status.textContent=err.message;else notice(err.message);}return;}if(e.target.closest('.u-page'))e.preventDefault();});
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 window.addEventListener('storage',e=>{if(e.key!==KEY)return;if(dirty){notice('다른 창에서 변경되었습니다. 입력 내용을 확인하고 새로고침해주세요.');return;}try{state=e.newValue?M.validate(JSON.parse(e.newValue)):M.seed(catalog);raw=e.newValue;render(current);home();}catch(err){blocked=err.message;notice(blocked);}});
 function rolloverDay(){
