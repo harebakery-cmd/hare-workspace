@@ -293,6 +293,9 @@
     a.textContent='↗  '+item.label;a.addEventListener('click',()=>{if(window.innerWidth<1024)$('mobile-menu-btn')?.click();});host.append(a);
    }
   }
+  const standardOrder=document.querySelector('#sidebar [data-target="view-order"]');
+  const dungokOrder=document.querySelector('#sidebar [data-target="view-order-dungok"]');
+  if(standardOrder&&dungokOrder)standardOrder.after(dungokOrder);
   for(const row of boards()){
    const card=document.querySelector(`#view-dashboard [data-open="${row.id}"]`);
    if(card)card.hidden=row.visible===false || row.home===false || card.dataset.accessHidden==='true';
