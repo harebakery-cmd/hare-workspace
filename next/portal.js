@@ -39,7 +39,7 @@
   function soldQty(day,sid,pid){return num(day?.[sid]?.rows?.[pid]);}
   function salesTotal(sid,pid){return Object.values(sales).reduce((sum,day)=>sum+soldQty(day,sid,pid),0);}
   function boardRoute(b){return ['order','production','report','pos'].includes(b.type)?b.type:'board:'+b.id;}
-  function navigate(next){route=next;render();$('sidebar').classList.remove('open');$('mobile-scrim').hidden=true;window.scrollTo(0,0);}
+  function navigate(next){if(next!==route&&next.startsWith('board:')){boardStore='all';writingBoard='';}route=next;render();$('sidebar').classList.remove('open');$('mobile-scrim').hidden=true;window.scrollTo(0,0);}
   function nav(){const groups=new Map(config.categories.map(c=>[c.id,[]]));const other=[];boards().forEach(b=>(groups.get(b.categoryId)||other).push(b));let html=`<button class="nav-item ${route==='dashboard'?'active':''}" data-route="dashboard"><span class="symbol">◫</span>TODAY</button>`;
     for(const category of config.categories){const rows=groups.get(category.id);if(!rows?.length)continue;html+=`<div class="nav-label">${esc(category.name)}</div>`+rows.map(b=>`<button class="nav-item ${route===boardRoute(b)?'active':''}" data-route="${esc(boardRoute(b))}"><span class="symbol">${b.type==='link'?'↗':'□'}</span>${esc(b.title)}</button>`).join('');}
     if(other.length)html+='<div class="nav-label">게시판</div>'+other.map(b=>`<button class="nav-item ${route===boardRoute(b)?'active':''}" data-route="${esc(boardRoute(b))}"><span class="symbol">□</span>${esc(b.title)}</button>`).join('');
