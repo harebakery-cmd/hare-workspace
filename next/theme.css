@@ -41,3 +41,5 @@ input[type="checkbox"],input[type="radio"],.chip input{accent-color:var(--accent
 .product-editor{grid-column:1/-1;border-top:1px solid var(--border-ink);padding-top:14px}
 .product-row>.muted{grid-column:1/-1}
 @media(max-width:720px){.product-filters{grid-template-columns:1fr 1fr}.product-filters .field:first-child{grid-column:1/-1}.product-row-summary{display:grid;gap:2px}.product-row-summary strong{max-width:100%}}
+
+.manage-grid>.manage-nav{align-self:start}
