@@ -13,7 +13,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script defer src="./portal.js?v=16"></script>
+  <script defer src="./portal.js?v=17"></script>
 </head>
 <body>
   <div class="shell">
@@ -28,7 +28,7 @@
     </div>
   </div>
   <div id="mobile-scrim" hidden></div>
-  <dialog id="login-dialog"><form method="dialog" id="login-form"><div class="dialog-head"><span class="eyebrow">WORKSPACE ACCESS</span><button type="button" id="login-close" class="icon-btn" aria-label="닫기">×</button></div><h2>업무 포털 로그인</h2><p>hare01 또는 승인된 Firebase 계정 이메일로 로그인합니다. 게시판·제품 설정은 hare01 전용입니다.</p><label>아이디 또는 이메일<input name="id" value="hare01" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><p id="login-error" class="error" role="alert"></p><button class="primary" type="submit">로그인</button></form></dialog>
+  <dialog id="login-dialog"><form id="login-form" autocomplete="on"><div class="dialog-head"><span class="eyebrow">WORKSPACE ACCESS</span><button type="button" id="login-close" class="icon-btn" aria-label="닫기">×</button></div><h2>업무 포털 로그인</h2><p>hare01 또는 승인된 Firebase 계정 이메일로 로그인합니다. 게시판·제품 설정은 hare01 전용입니다.</p><label>아이디 또는 이메일<input name="id" value="hare01" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><p id="login-error" class="error" role="alert"></p><button class="primary" type="submit">로그인</button></form></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
