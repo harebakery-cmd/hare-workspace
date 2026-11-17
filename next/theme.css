@@ -43,3 +43,7 @@ input[type="checkbox"],input[type="radio"],.chip input{accent-color:var(--accent
 @media(max-width:720px){.product-filters{grid-template-columns:1fr 1fr}.product-filters .field:first-child{grid-column:1/-1}.product-row-summary{display:grid;gap:2px}.product-row-summary strong{max-width:100%}}
 
 .manage-grid>.manage-nav{align-self:start}
+
+:root{--toast-bg:var(--button-bg);--toast-ink:var(--button-ink)}
+#toast{background:var(--toast-bg);color:var(--toast-ink);box-shadow:0 12px 25px -15px color-mix(in srgb,var(--shadow-ink) 40%,transparent)}
+.design-preview .toast-preview{display:table;margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--preview-toast,var(--preview-button));color:var(--preview-toast-text,var(--preview-button-text));font-size:12px;font-weight:700;box-shadow:0 12px 25px -15px color-mix(in srgb,var(--preview-shadow) 40%,transparent)}
