@@ -1,4 +1,4 @@
-:root{--accent:#88dbdf;--page-bg:#f5f7f6;--title-ink:#233235;--font-stack:'Pretendard','Noto Sans KR',sans-serif}
+:root{--accent:#88dbdf;--page-bg:#f5f7f6;--title-ink:#233235;--text-ink:#233235;--font-stack:'Pretendard','Noto Sans KR',sans-serif}
 html,body{font-family:var(--font-stack);background:var(--page-bg)}
 .shell,.main-wrap,main{background:var(--page-bg)}
 .brand-mark{background:var(--accent)}
@@ -14,3 +14,7 @@ html,body{font-family:var(--font-stack);background:var(--page-bg)}
 .design-preview p{font-size:12px;color:var(--preview-title);margin:0 0 15px}
 .design-preview .eyebrow{color:var(--preview-title)}
 .design-preview .primary{background:var(--preview-accent);border-color:var(--preview-accent);color:var(--preview-title)}
+
+body,.main-wrap,main{color:var(--text-ink)}
+.page-head p,.muted,.stat span,.board-heading p,.post p,.board-card p,.empty,.empty strong,form label,.field{color:var(--text-ink)}
+.design-preview p{color:var(--preview-text,var(--text-ink))}
