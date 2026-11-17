@@ -51,3 +51,9 @@ input[type="checkbox"],input[type="radio"],.chip input{accent-color:var(--accent
 .product-edit-dialog{width:min(660px,calc(100vw - 28px));max-height:min(90dvh,850px);overflow:auto;background:var(--surface-bg);color:var(--text-ink);border:1px solid var(--border-ink);box-shadow:0 25px 80px -30px color-mix(in srgb,var(--shadow-ink) 55%,transparent)}
 .product-edit-dialog::backdrop{background:color-mix(in srgb,var(--text-ink) 42%,transparent)}
 .product-dialog-head{align-items:center}.product-dialog-head h2{margin:0}.product-edit-dialog .product-editor{border:0;padding:0}
+
+.product-row-summary .product-labels{display:flex;align-items:center;gap:3px;min-width:0;overflow:hidden;white-space:nowrap}
+.product-category-label,.product-store-label{display:inline-flex;align-items:center;flex:none;border-radius:5px;padding:3px 5px;font-size:10px;font-weight:700;line-height:1.4;white-space:nowrap}
+.product-label-empty{font-size:10px;color:var(--muted-ink)}
+.product-label-preview{display:flex;gap:5px;flex-wrap:wrap}
+@media(max-width:720px){.product-row-summary .product-labels{max-width:100%}}
