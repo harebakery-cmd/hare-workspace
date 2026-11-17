@@ -47,3 +47,7 @@ input[type="checkbox"],input[type="radio"],.chip input{accent-color:var(--accent
 :root{--toast-bg:var(--button-bg);--toast-ink:var(--button-ink)}
 #toast{background:var(--toast-bg);color:var(--toast-ink);box-shadow:0 12px 25px -15px color-mix(in srgb,var(--shadow-ink) 40%,transparent)}
 .design-preview .toast-preview{display:table;margin-top:14px;padding:10px 14px;border-radius:10px;background:var(--preview-toast,var(--preview-button));color:var(--preview-toast-text,var(--preview-button-text));font-size:12px;font-weight:700;box-shadow:0 12px 25px -15px color-mix(in srgb,var(--preview-shadow) 40%,transparent)}
+
+.product-edit-dialog{width:min(660px,calc(100vw - 28px));max-height:min(90dvh,850px);overflow:auto;background:var(--surface-bg);color:var(--text-ink);border:1px solid var(--border-ink);box-shadow:0 25px 80px -30px color-mix(in srgb,var(--shadow-ink) 55%,transparent)}
+.product-edit-dialog::backdrop{background:color-mix(in srgb,var(--text-ink) 42%,transparent)}
+.product-dialog-head{align-items:center}.product-dialog-head h2{margin:0}.product-edit-dialog .product-editor{border:0;padding:0}
