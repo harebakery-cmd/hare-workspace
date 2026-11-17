@@ -1,0 +1,16 @@
+:root{--accent:#88dbdf;--page-bg:#f5f7f6;--title-ink:#233235;--font-stack:'Pretendard','Noto Sans KR',sans-serif}
+html,body{font-family:var(--font-stack);background:var(--page-bg)}
+.shell,.main-wrap,main{background:var(--page-bg)}
+.brand-mark{background:var(--accent)}
+.nav-item:hover,.nav-item.active,.manage-nav button.active{background:color-mix(in srgb,var(--accent) 19%,white);color:var(--title-ink)}
+.page-head h1,.board-heading h1,.panel h2,.panel h3,.stat strong{color:var(--title-ink)}
+.primary{background:color-mix(in srgb,var(--accent) 72%,#235f62);border-color:color-mix(in srgb,var(--accent) 72%,#235f62);color:#183638}
+.primary:hover{background:color-mix(in srgb,var(--accent) 58%,#235f62)}
+.badge,.notice,.ticker{background:color-mix(in srgb,var(--accent) 16%,white);color:var(--title-ink)}
+.eyebrow{color:color-mix(in srgb,var(--accent) 45%,#295459)}
+.field :focus,form label :focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.design-preview{--preview-accent:#88dbdf;--preview-bg:#f5f7f6;--preview-title:#233235;background:var(--preview-bg);border:1px solid #dce8e5;border-radius:16px;padding:24px;min-height:175px}
+.design-preview h3{color:var(--preview-title);font-size:21px;margin:6px 0}
+.design-preview p{font-size:12px;color:var(--preview-title);margin:0 0 15px}
+.design-preview .eyebrow{color:var(--preview-title)}
+.design-preview .primary{background:var(--preview-accent);border-color:var(--preview-accent);color:var(--preview-title)}
