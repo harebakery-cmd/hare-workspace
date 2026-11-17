@@ -28,3 +28,5 @@ body,.main-wrap,main{color:var(--text-ink)}
 .design-preview p{font-size:12px;color:var(--preview-text);margin:0 0 15px}
 .design-preview .eyebrow{color:var(--preview-muted)}
 .design-preview .primary{background:var(--preview-button);border-color:var(--preview-button);color:var(--preview-button-text)}
+
+input[type="checkbox"],input[type="radio"],.chip input{accent-color:var(--accent)}
