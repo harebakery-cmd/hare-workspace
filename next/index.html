@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7f6">
+  <title>HARE,HARE · 업무 포털</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./portal.css?v=2">
+  <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script defer src="./portal.js?v=2"></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">H</span><div><strong>HARE,HARE</strong><small>WORKSPACE</small></div></div>
+      <nav id="nav" aria-label="업무 메뉴"></nav>
+      <div class="sidebar-foot"><span class="live-dot"></span> 실시간 공유 포털 <small>NEW WORKSPACE</small></div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar"><button id="menu-toggle" class="icon-btn" aria-label="메뉴 열기">☰</button><div class="breadcrumb">HARE,HARE <span>/</span> <b id="page-title">TODAY</b></div><button id="login-button" class="login-button">로그인</button></header>
+      <main id="content" tabindex="-1"></main>
+    </div>
+  </div>
+  <div id="mobile-scrim" hidden></div>
+  <dialog id="login-dialog"><form method="dialog" id="login-form"><div class="dialog-head"><span class="eyebrow">WORKSPACE ACCESS</span><button type="button" id="login-close" class="icon-btn" aria-label="닫기">×</button></div><h2>업무 포털 로그인</h2><p>hare01 또는 승인된 Firebase 계정 이메일로 로그인합니다. 게시판·제품 설정은 hare01 전용입니다.</p><label>아이디 또는 이메일<input name="id" value="hare01" autocomplete="username" required></label><label>비밀번호<input name="password" type="password" autocomplete="current-password" required></label><p id="login-error" class="error" role="alert"></p><button class="primary" type="submit">로그인</button></form></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
