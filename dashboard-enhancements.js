@@ -493,20 +493,10 @@
   }catch(err){status.textContent='저장하지 못했습니다: '+err.message;}
  });
  window.addEventListener('hare-admin-change',()=>{syncHistoryImports();editEvent='';applyMenu();calendarView();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);});
- const legacyProductPage=document.getElementById('view-newprod');
- if(legacyProductPage){
-  const showMasterLink=()=>{
-   const form=legacyProductPage.querySelector('#u-product');
-   if(!form||legacyProductPage.querySelector('[data-master-console-link]'))return;
-   const note=document.createElement('p');
-   note.dataset.masterConsoleLink='true';
-   note.className='u-muted';
-   note.innerHTML='<a href="./next/" style="font-weight:700;text-decoration:underline">통합 메뉴·제품 관리 콘솔 열기</a> · 엑셀 일괄 등록, 카테고리 정렬, 신제품 임시 저장·실패 내역을 관리합니다.';
-   form.before(note);
-  };
-  new MutationObserver(showMasterLink).observe(legacyProductPage,{childList:true,subtree:true});
-  showMasterLink();
- }
+ const masterScript=document.createElement('script');
+ masterScript.src='./legacy-master.js?v=1';
+ masterScript.defer=true;
+ document.head.append(masterScript);
  window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu,applyOrderTabs};
  window.HareWorkspace={modules,getModuleSettings:id=>modules().find(x=>x.id===id)||null,getHistoryImports:id=>Object.values(historyImports||{}).filter(x=>!id||x.moduleId===id),openModule};
 })();
