@@ -5,7 +5,7 @@
  if (!document.querySelector('script[data-hare-product-console]')) {
   const productConsole = document.createElement('script');
   productConsole.dataset.hareProductConsole = 'true';
-  productConsole.src = './legacy-master.js?v=3';
+  productConsole.src = './legacy-master.js?v=4';
   productConsole.defer = true;
   document.head.appendChild(productConsole);
  }
@@ -511,3 +511,4 @@
  window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu,applyOrderTabs};
  window.HareWorkspace={modules,getModuleSettings:id=>modules().find(x=>x.id===id)||null,getHistoryImports:id=>Object.values(historyImports||{}).filter(x=>!id||x.moduleId===id),openModule};
 })();
+
