@@ -24,5 +24,5 @@
 }
 ```
 
-엑셀 교체는 `hareharePortal/private/masterArchives/{timestamp}`에 이전 자료를 기록하면서 `next/config`, `next/orders`, `next/production`, `next/sales`를 한 번의 다중 경로 업데이트로 변경합니다. 규칙이 빠져 있으면 전체 요청이 거부되어 기존 자료가 유지됩니다. 교체 전에 콘솔의 **현재 데이터 백업**으로 JSON도 내려받고, 미리보기의 오류 행을 모두 해결한 뒤 진행하세요.
+엑셀 교체는 기존 포털의 `shared/catalog`, `shared/orders`, `shared/production`, `shared/productionDiary`도 JSON 백업 및 비공개 보관본에 포함합니다. 기존 포털의 실제 자료는 유지합니다. `hareharePortal/private/masterArchives/{timestamp}`에 이전 자료를 기록하면서 `next/config`, `next/orders`, `next/production`, `next/sales`를 한 번의 다중 경로 업데이트로 변경합니다. 규칙이 빠져 있으면 전체 요청이 거부되어 기존 자료가 유지됩니다. 교체 전에 콘솔의 **현재 데이터 백업**으로 JSON도 내려받고, 미리보기의 오류 행을 모두 해결한 뒤 진행하세요.
 
