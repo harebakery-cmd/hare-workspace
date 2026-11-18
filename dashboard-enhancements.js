@@ -1,6 +1,14 @@
 /* Dashboard calendar and centrally managed navigation. Firebase is the shared source. */
 (() => {
  'use strict';
+ // Keep the product console attached even when dashboard setup runs later.
+ if (!document.querySelector('script[data-hare-product-console]')) {
+  const productConsole = document.createElement('script');
+  productConsole.dataset.hareProductConsole = 'true';
+  productConsole.src = './legacy-master.js?v=2';
+  productConsole.defer = true;
+  document.head.appendChild(productConsole);
+ }
  const $ = id => document.getElementById(id);
  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const menuGroups=[['today','TODAY'],['resources','자료'],['external','외부 링크']];
