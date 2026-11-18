@@ -15,5 +15,14 @@
 
 위 JSON은 **삽입 위치 설명용**이며 그대로 게시할 수 있는 완성 규칙이 아닙니다. `orders`와 `production`의 기존 자식 규칙은 삭제하지 마세요. `next/config` 및 `next/sales`의 최고관리자 쓰기 규칙도 유지합니다.
 
-엑셀 교체는 `config`, `orders`, `production`, `sales`를 한 번의 다중 경로 업데이트로 변경합니다. 규칙이 빠져 있으면 전체 요청이 거부되어 기존 자료가 유지됩니다. 교체 전에 콘솔의 **현재 데이터 백업**으로 JSON을 보관하고, 미리보기의 오류 행을 모두 해결한 뒤 진행하세요.
+별도로 `rules.hareharePortal.private` 아래에 다음 노드를 추가하세요. `next`에는 상위 `.read: true`가 있으므로 보관본을 그 아래에 두면 비공개가 되지 않습니다.
+
+```json
+"masterArchives": {
+  ".read": "auth !== null && auth.uid === '2gGRDUrXlyNwMpw1xpLA3iH35Fd2'",
+  ".write": "auth !== null && auth.uid === '2gGRDUrXlyNwMpw1xpLA3iH35Fd2'"
+}
+```
+
+엑셀 교체는 `hareharePortal/private/masterArchives/{timestamp}`에 이전 자료를 기록하면서 `next/config`, `next/orders`, `next/production`, `next/sales`를 한 번의 다중 경로 업데이트로 변경합니다. 규칙이 빠져 있으면 전체 요청이 거부되어 기존 자료가 유지됩니다. 교체 전에 콘솔의 **현재 데이터 백업**으로 JSON도 내려받고, 미리보기의 오류 행을 모두 해결한 뒤 진행하세요.
 
