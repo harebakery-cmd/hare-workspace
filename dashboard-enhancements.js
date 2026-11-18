@@ -5,7 +5,7 @@
  if (!document.querySelector('script[data-hare-product-console]')) {
   const productConsole = document.createElement('script');
   productConsole.dataset.hareProductConsole = 'true';
-  productConsole.src = './legacy-master.js?v=7';
+  productConsole.src = './legacy-master.js?v=8';
   productConsole.defer = true;
   document.head.appendChild(productConsole);
  }
