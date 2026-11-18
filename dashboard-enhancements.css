@@ -218,3 +218,12 @@ html[data-theme="dark"] .hd-inner-nav button[aria-current="page"],.dark .hd-inne
 .hd-import-list{display:grid;gap:8px}
 .hd-import-list>div{display:grid;gap:4px;padding:10px 12px;border-radius:10px;background:rgba(128,128,128,.08)}
 .hd-import-list span{color:#888;font-size:12px}
+.hd-panel[open]>.hd-board-list,.hd-panel[open]>#hd-custom-list{margin-top:14px}
+#view-menu-admin>details.hd-panel>summary{cursor:pointer;font-weight:750;font-size:17px;list-style:none}
+#view-menu-admin>details.hd-panel>summary::after{content:'⌄';float:right}
+#view-menu-admin>details.hd-panel[open]>summary::after{content:'⌃'}
+#view-menu-admin .hd-board-card{padding:10px 12px;margin:8px 0;border-radius:12px}
+#view-menu-admin .hd-board-main{gap:10px}
+#view-menu-admin .hd-board-name small{display:none}
+#view-menu-admin .hd-board-details{margin-top:4px}
+#view-menu-admin .hd-panel{padding:18px}
