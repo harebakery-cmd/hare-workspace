@@ -28,7 +28,7 @@
  const sectionMap = {
   'view-calendar': [['calendar','달력'],['agenda','선택 날짜 일정']],
   'view-bulletin': [['list','공지 목록'],['compose','공지 작성']],
-  'view-newprod': [['register','신제품 등록'],['list','등록된 신제품']],
+  'view-newprod': [],
   'view-recipe': [['list','배합표 게시판'],['register','배합표 등록']],
   'view-origin': [['products','제품 선택'],['edit','원산지 정보'],['queue','원라벨 목록']]
  };
@@ -493,10 +493,7 @@
   }catch(err){status.textContent='저장하지 못했습니다: '+err.message;}
  });
  window.addEventListener('hare-admin-change',()=>{syncHistoryImports();editEvent='';applyMenu();calendarView();adminView();const active=document.querySelector('.spa-page.active');if(active&&sectionMap[active.id])innerMenu(active.id);});
- const masterScript=document.createElement('script');
- masterScript.src='./legacy-master.js?v=1';
- masterScript.defer=true;
- document.head.append(masterScript);
  window.HareDashboard={init,render,renderDashboard,renderNotices,applyMenu,applyOrderTabs};
  window.HareWorkspace={modules,getModuleSettings:id=>modules().find(x=>x.id===id)||null,getHistoryImports:id=>Object.values(historyImports||{}).filter(x=>!id||x.moduleId===id),openModule};
 })();
+
