@@ -729,7 +729,7 @@ function validate(x){
 }
 function read(){try{raw=localStorage.getItem(KEY);db=raw?validate(JSON.parse(raw)):clone(defaults);error='';}catch(e){error=e.message;session=null;}}
 read();
-try{const saved=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');if(saved&&typeof saved.id==='string'&&typeof saved.hash==='string'&&!saved.remote)session={id:saved.id,hash:saved.hash};}catch{sessionStorage.removeItem(SESSION_KEY);}
+try{const saved=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');if(saved&&typeof saved.id==='string'&&typeof saved.hash==='string'&&!saved.remote)session={id:saved.id,hash:saved.hash};}catch{try{sessionStorage.removeItem(SESSION_KEY);}catch{}}
 function user(){if(error||!session)return null;if(session.remote)return window.HareFirebase?.auth?.currentUser?.uid===session.uid&&remoteUser?.active?remoteUser:null;const u=db.users.find(u=>u.id===session.id);if(!u?.active||u.hash!==session.hash)return null;if(u.id==='hare01'&&!window.HareFirebase?.isRoot())return null;return u;}
 function admin(){return ['admin','super'].includes(user()?.role);}
 function highest(){return user()?.role==='super';}
@@ -850,7 +850,7 @@ window.HareFirebase?.auth?.onAuthStateChanged(async firebaseUser=>{
    let profile;
    if(firebaseUser.uid===linkedAdmin.uid)profile={id:linkedAdmin.id,name:'관리자',role:'admin',active:true,firebaseUid:firebaseUser.uid,menuOnly:true};
    else profile=(await window.HareFirebase.database.ref(registrationBase+'profiles/'+firebaseUser.uid).once('value')).val();
-   if(!profile||profile.active!==true||!['manager','admin'].includes(profile.role)||profile.id==='hare01')throw Error('활성 계정이 아닙니다.');
+   if(!profile||profile.active!==true||!['manager','admin'].includes(profile.role)||['hare01',linkedAdmin.id].includes(profile.id))throw Error('활성 계정이 아닙니다.');
    if(window.HareFirebase.auth.currentUser?.uid!==firebaseUser.uid)return;
    remoteUser={...profile,active:true,firebaseUid:firebaseUser.uid};session={id:profile.id,uid:firebaseUser.uid,remote:true};
   }
