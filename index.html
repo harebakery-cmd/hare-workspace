@@ -749,7 +749,7 @@ $('local-admin-form').addEventListener('submit',async e=>{e.preventDefault();con
   const email=byId?$('linked-admin-email').value.trim():id;
   if(!fb?.auth||!fb?.database)throw Error('Firebase 연결을 확인해주세요.');
   if(window.HareUnified&&!HareUnified.canLeave())return;
-  await fb.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>fb.auth.setPersistence(firebase.auth.Auth.Persistence.SESSION));
+  await fb.auth.setPersistence('local').catch(()=>fb.auth.setPersistence('session'));
   const credential=await fb.auth.signInWithEmailAndPassword(email,password);
   const uid=credential.user.uid;
   try{
@@ -764,7 +764,7 @@ $('local-admin-form').addEventListener('submit',async e=>{e.preventDefault();con
   }catch(err){await fb.auth.signOut();throw err;}
   session={id:remoteUser.id,uid,remote:true};rememberSession();close();$('local-admin-form').reset();updateLinkedAdminField();emit();return;
  }
- if(id==='hare01'){const fb=window.HareFirebase;if(!fb?.auth)throw Error('Firebase 연결을 시작하지 못했습니다. 인터넷 연결을 확인해주세요.');await fb.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>fb.auth.setPersistence(firebase.auth.Auth.Persistence.SESSION));const credential=await fb.auth.signInWithEmailAndPassword(fb.adminEmail,password);if(credential.user.uid!==fb.adminUid){await fb.auth.signOut();throw Error('Firebase 관리자 계정 UID가 등록된 최고관리자와 다릅니다.');}if(!u||!u.active)throw Error('포털 최고관리자 계정을 찾을 수 없습니다.');}
+ if(id==='hare01'){const fb=window.HareFirebase;if(!fb?.auth)throw Error('Firebase 연결을 시작하지 못했습니다. 인터넷 연결을 확인해주세요.');await fb.auth.setPersistence('local').catch(()=>fb.auth.setPersistence('session'));const credential=await fb.auth.signInWithEmailAndPassword(fb.adminEmail,password);if(credential.user.uid!==fb.adminUid){await fb.auth.signOut();throw Error('Firebase 관리자 계정 UID가 등록된 최고관리자와 다릅니다.');}if(!u||!u.active)throw Error('포털 최고관리자 계정을 찾을 수 없습니다.');}
  else {if(!u||!u.active||await hash(password,u.salt)!==u.hash)throw Error('아이디 또는 비밀번호를 확인해주세요.');const fb=window.HareFirebase;if(fb?.auth?.currentUser)await fb.auth.signOut();}
  if(localStorage.getItem(KEY)!==expectedRaw)throw Error('계정이 변경되었습니다. 다시 로그인해주세요.');
  if(window.HareUnified&&!HareUnified.canLeave())return;
